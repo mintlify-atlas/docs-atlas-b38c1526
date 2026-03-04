@@ -1,0 +1,516 @@
+---
+title: API Reference
+description: Core interfaces, types, and functions in Docket
+---
+
+This reference documents the key APIs and functions in Docket's codebase.
+
+## Interfaces
+
+### UserNote
+
+Represents a single note stored by the user.
+
+```typescript src/definitions.ts:10-16
+interface UserNote {
+  uuid: string;
+  title: string;
+  body: string;
+  lastUpdated: number;
+  lastSynced?: number;
+}
+```
+
+<ParamField path="uuid" type="string" required>
+  Unique identifier for the note, generated with `crypto.randomUUID()`
+</ParamField>
+
+<ParamField path="title" type="string" required>
+  Display title of the note, shown in the sidebar
+</ParamField>
+
+<ParamField path="body" type="string" required>
+  Markdown content of the note
+</ParamField>
+
+<ParamField path="lastUpdated" type="number" required>
+  Timestamp in milliseconds since epoch when the note was last modified
+</ParamField>
+
+<ParamField path="lastSynced" type="number" optional>
+  Timestamp in milliseconds since epoch when the note was last synced with remote storage (for future sync feature)
+</ParamField>
+
+### NoteStore
+
+The data structure managing all notes and their ordering.
+
+```typescript src/definitions.ts:18-23
+interface NoteStore {
+  noteMap: Map<string, UserNote>;
+  indexToUUID: Map<number, string>;
+  UUIDToIndex: Map<string, number>;
+  deletedNotes: Set<string>;
+}
+```
+
+<ParamField path="noteMap" type="Map<string, UserNote>" required>
+  Primary storage mapping note UUIDs to UserNote objects
+</ParamField>
+
+<ParamField path="indexToUUID" type="Map<number, string>" required>
+  Maps display order indices (0, 1, 2...) to note UUIDs for ordered rendering
+</ParamField>
+
+<ParamField path="UUIDToIndex" type="Map<string, number>" required>
+  Reverse mapping from note UUIDs to their display indices
+</ParamField>
+
+<ParamField path="deletedNotes" type="Set<string>" required>
+  Set of deleted note UUIDs, tracked for future cross-device sync functionality
+</ParamField>
+
+## Core Functions
+
+### createNote
+
+Creates a new note and adds it to the note store.
+
+```typescript src/index.ts:487-506
+const createNote = (noteTemplate?: Partial<UserNote>): UserNote => {
+  const newNote: UserNote = {
+    uuid: crypto.randomUUID(),
+    title: noteTemplate?.title || "New Note",
+    body: noteTemplate?.body || "",
+    lastUpdated: Date.now(),
+  };
+
+  setNoteByUUID(newNote.uuid, newNote);
+  docketProps.dbConnection?.transaction("notes", "readwrite").objectStore("notes").add(newNote);
+  renderNoteList();
+  saveNoteOrder();
+  return newNote;
+};
+```
+
+<ParamField path="noteTemplate" type="Partial<UserNote>" optional>
+  Optional template with pre-filled title or body for the new note
+</ParamField>
+
+<ResponseField name="return" type="UserNote">
+  The newly created UserNote object
+</ResponseField>
+
+### setActiveNote
+
+Sets the active note and loads it into the editor.
+
+```typescript src/index.ts:512-528
+const setActiveNote = (userNote: UserNote) => {
+  const prevActiveNote = <HTMLLIElement>document.getElementById(docketProps.activeNoteUUID);
+  prevActiveNote?.classList.remove("active");
+  
+  docketProps.activeNoteUUID = userNote.uuid;
+  chrome.storage.local.set({ activeNoteUUID: docketProps.activeNoteUUID });
+  
+  const noteTitleElement = <HTMLInputElement>document.getElementById("noteTitle");
+  const noteEditorElement = <HTMLInputElement>document.getElementById("markdownInput");
+  const noteListItem = <HTMLLIElement>document.getElementById(docketProps.activeNoteUUID);
+  
+  noteTitleElement.value = docketProps.noteStore.noteMap.get(userNote.uuid)!.title;
+  noteEditorElement.value = docketProps.noteStore.noteMap.get(userNote.uuid)!.body;
+  noteListItem?.classList.add("active");
+  
+  saveActiveNote();
+  renderMarkdown();
+};
+```
+
+<ParamField path="userNote" type="UserNote" required>
+  The note to set as active and load into the editor
+</ParamField>
+
+This function:
+- Removes "active" styling from the previous note
+- Updates the global `activeNoteUUID`
+- Persists the active note UUID to Chrome storage
+- Populates the editor with the note's title and body
+- Triggers markdown rendering
+
+### getNoteByUUID
+
+Retrieves a note by its UUID.
+
+```typescript src/index.ts:158-160
+const getNoteByUUID = (uuid: string): UserNote => {
+  return docketProps.noteStore.noteMap.get(uuid) || createNote();
+};
+```
+
+<ParamField path="uuid" type="string" required>
+  UUID of the note to retrieve
+</ParamField>
+
+<ResponseField name="return" type="UserNote">
+  The UserNote object, or a new note if the UUID doesn't exist
+</ResponseField>
+
+### deleteNoteByUUID
+
+Deletes a note from the note store and IndexedDB.
+
+```typescript src/index.ts:190-223
+const deleteNoteByUUID = (uuid: string) => {
+  docketProps.noteStore.noteMap.delete(uuid);
+  docketProps.dbConnection?.transaction("notes", "readwrite").objectStore("notes").delete(uuid);
+  docketProps.noteStore.deletedNotes.add(uuid);
+  
+  const index = docketProps.noteStore.UUIDToIndex.get(uuid);
+  if (index !== undefined) {
+    // Decrement indices for all notes after this one
+    for (let i = index + 1; i < docketProps.noteStore.indexToUUID.size; i++) {
+      let uuidAtIndex = docketProps.noteStore.indexToUUID.get(i);
+      if (uuidAtIndex) {
+        docketProps.noteStore.UUIDToIndex.set(uuidAtIndex, i - 1);
+        docketProps.noteStore.indexToUUID.set(i - 1, uuidAtIndex);
+      }
+    }
+    docketProps.noteStore.UUIDToIndex.delete(uuid);
+    docketProps.noteStore.indexToUUID.delete(docketProps.noteStore.indexToUUID.size - 1);
+    
+    if (docketProps.noteStore.noteMap.size > 0) {
+      setActiveNote(getNoteByIndex(0));
+    } else {
+      setActiveNote(createNote());
+    }
+  }
+  saveNoteOrder();
+  renderNoteList();
+};
+```
+
+<ParamField path="uuid" type="string" required>
+  UUID of the note to delete
+</ParamField>
+
+This function:
+- Removes the note from `noteMap`
+- Deletes the note from IndexedDB
+- Adds the UUID to `deletedNotes` for sync tracking
+- Updates indices for all subsequent notes
+- Sets a new active note (first note or creates one)
+
+### moveNoteToIndex
+
+Moves a note to a new position in the display order.
+
+```typescript src/index.ts:230-257
+const moveNoteToIndex = (uuid: string, targetIndex: number) => {
+  const prevIndex = docketProps.noteStore.UUIDToIndex.get(uuid);
+  
+  if (prevIndex && prevIndex < targetIndex) {
+    // Moving down: decrement indices between prevIndex and targetIndex
+    for (let i = prevIndex + 1; i <= targetIndex; i++) {
+      let uuidAtIndex = docketProps.noteStore.indexToUUID.get(i);
+      if (uuidAtIndex) {
+        docketProps.noteStore.UUIDToIndex.set(uuidAtIndex, i - 1);
+        docketProps.noteStore.indexToUUID.set(i - 1, uuidAtIndex);
+      }
+    }
+  } else if (prevIndex && prevIndex > targetIndex) {
+    // Moving up: increment indices between targetIndex and prevIndex
+    for (let i = prevIndex - 1; i >= targetIndex; i--) {
+      let uuidAtIndex = docketProps.noteStore.indexToUUID.get(i);
+      if (uuidAtIndex) {
+        docketProps.noteStore.UUIDToIndex.set(uuidAtIndex, i + 1);
+        docketProps.noteStore.indexToUUID.set(i + 1, uuidAtIndex);
+      }
+    }
+  }
+  
+  docketProps.noteStore.UUIDToIndex.set(uuid, targetIndex);
+  docketProps.noteStore.indexToUUID.set(targetIndex, uuid);
+  saveNoteOrder();
+};
+```
+
+<ParamField path="uuid" type="string" required>
+  UUID of the note to move
+</ParamField>
+
+<ParamField path="targetIndex" type="number" required>
+  The index position to move the note to (0-based)
+</ParamField>
+
+This function:
+- Shifts indices of affected notes up or down
+- Updates both `indexToUUID` and `UUIDToIndex` maps
+- Persists the new order to IndexedDB
+
+### renderMarkdown
+
+Parses markdown from the editor and renders it to the preview panel.
+
+```typescript src/index.ts:270-279
+const renderMarkdown = () => {
+  const markdownOutput = <HTMLElement>document.getElementById("markdownOutput");
+  if (markdownOutput.style.display === "none") {
+    return;
+  }
+
+  const editorText = getHTMLEditorText();
+  markdownOutput.innerHTML = DOMPurify.sanitize(marked.parse(editorText) as keyof typeof String);
+};
+```
+
+This function:
+- Gets raw markdown from the editor textarea
+- Parses markdown to HTML using Marked.js
+- Sanitizes HTML with DOMPurify to prevent XSS
+- Updates the preview panel's innerHTML
+- Returns early if preview panel is hidden
+
+### saveActiveNote
+
+Saves the currently active note to the note store and IndexedDB.
+
+```typescript src/index.ts:391-409
+const saveActiveNote = () => {
+  if (!docketProps.dbConnection) {
+    alert("Error: Database connection is not initialized. Note has not been saved.");
+    return;
+  }
+  
+  const userNote = getActiveNote();
+  if (userNote) {
+    docketProps.noteStore.noteMap.set(userNote.uuid, userNote);
+    userNote.title = htmlDecode(getHTMLNoteTitle());
+    userNote.body = htmlDecode(getHTMLEditorText());
+    userNote.lastUpdated = Date.now();
+
+    const transaction = docketProps.dbConnection.transaction("notes", "readwrite");
+    const notesStore = transaction.objectStore("notes");
+    notesStore.put(userNote);
+  }
+};
+```
+
+This function:
+- Retrieves the active note object
+- Updates its title and body from the editor
+- Updates the `lastUpdated` timestamp
+- Persists changes to IndexedDB using `put` (upsert)
+
+### downloadActiveNote
+
+Downloads the currently active note as a `.md` file.
+
+```typescript src/index.ts:546-560
+const downloadActiveNote = () => {
+  const activeNote = getActiveNote();
+  if (!activeNote) {
+    return;
+  }
+  
+  const blob = new Blob([activeNote.body], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = activeNote.title + ".md";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+```
+
+This function:
+- Creates a Blob from the note's markdown body
+- Generates a download URL
+- Triggers a download with the note's title as filename
+- Cleans up the temporary URL
+
+## Settings Functions
+
+### toggleDarkMode
+
+Toggles between light and dark UI themes.
+
+```typescript src/index.ts:577-582
+const toggleDarkMode = () => {
+  const darkModeSlider = <HTMLInputElement>document.getElementById("darkModeSlider");
+  docketProps.settings.uiTheme = darkModeSlider.checked ? "dark" : "light";
+  setTheme(docketProps.settings.uiTheme);
+};
+```
+
+This function:
+- Reads the dark mode toggle checkbox state
+- Updates the global theme setting
+- Applies the theme to all `[data-theme]` elements
+- Persists the preference to Chrome storage
+
+### updateCodeStyle
+
+Changes the syntax highlighting theme for code blocks.
+
+```typescript src/index.ts:587-602
+const updateCodeStyle = () => {
+  const oldStyleSheet = document.getElementById("codeStylesheet");
+  if (oldStyleSheet) {
+    oldStyleSheet.parentNode?.removeChild(oldStyleSheet);
+  }
+
+  docketProps.settings.codeStyle = (<HTMLSelectElement>document.getElementById("codeStyleDropdown")).value;
+  chrome.storage.local.set(docketProps.settings);
+  
+  const codeStylesheetElement = document.createElement("link");
+  codeStylesheetElement.rel = "stylesheet";
+  codeStylesheetElement.href = `code_themes/${docketProps.settings.codeStyle}.css`;
+  codeStylesheetElement.id = "codeStylesheet";
+  document.head.appendChild(codeStylesheetElement);
+};
+```
+
+<ParamField path="codeStyle" type="string" default="github">
+  Name of the highlight.js theme (e.g., "github", "monokai", "vs2015")
+</ParamField>
+
+This function:
+- Removes the current code theme stylesheet
+- Reads the selected theme from the dropdown
+- Dynamically loads the new theme CSS
+- Persists the preference to Chrome storage
+
+## Helper Functions
+
+### htmlDecode
+
+Decodes HTML entities back to their original characters.
+
+```typescript src/index.ts:75-78
+const htmlDecode = (input: string): string => {
+  var doc = new DOMParser().parseFromString(input, "text/html");
+  return doc.documentElement.textContent || "";
+};
+```
+
+<ParamField path="input" type="string" required>
+  HTML-encoded string to decode
+</ParamField>
+
+<ResponseField name="return" type="string">
+  Decoded string with original characters
+</ResponseField>
+
+Used when reading values from HTML inputs to ensure proper storage of special characters.
+
+### getHTMLEditorText
+
+Returns the current markdown content from the editor.
+
+```typescript src/index.ts:143-145
+const getHTMLEditorText = () => {
+  return (<HTMLInputElement>document.getElementById("markdownInput")).value || "";
+};
+```
+
+<ResponseField name="return" type="string">
+  Raw markdown text from the editor textarea
+</ResponseField>
+
+### getHTMLNoteTitle
+
+Returns the current note title from the title input.
+
+```typescript src/index.ts:150-152
+const getHTMLNoteTitle = () => {
+  return (<HTMLInputElement>document.getElementById("noteTitle")).value || "unnamed";
+};
+```
+
+<ResponseField name="return" type="string">
+  Note title, defaulting to "unnamed" if empty
+</ResponseField>
+
+## View Mode Functions
+
+### editorMode
+
+Switches to editor-only view.
+
+```typescript src/index.ts:630-635
+const editorMode = () => {
+  docketProps.tempProps.viewMode = "editor";
+  leftPaneRadio.checked = true;
+  closeMarkdownOutput();
+  openMarkdownInput();
+};
+```
+
+### centerMode
+
+Switches to split view with editor and preview.
+
+```typescript src/index.ts:637-642
+const centerMode = () => {
+  docketProps.tempProps.viewMode = "center";
+  centerPaneRadio.checked = true;
+  openMarkdownInput();
+  openMarkdownOutput();
+};
+```
+
+### readerMode
+
+Switches to preview-only view.
+
+```typescript src/index.ts:644-649
+const readerMode = () => {
+  docketProps.tempProps.viewMode = "reader";
+  rightPaneRadio.checked = true;
+  openMarkdownOutput();
+  closeMarkdownInput();
+};
+```
+
+Each view mode function:
+- Updates the `viewMode` property
+- Checks the corresponding radio button
+- Shows/hides the appropriate panels
+
+## Initialization
+
+### initializeDocket
+
+Main initialization function called on page load and refocus.
+
+```typescript src/index.ts:685-710
+const initializeDocket = () => {
+  initDbConnection();
+
+  chrome.storage.local.get(null, (result) => {
+    docketProps.settings.codeStyle = result.codeStyle || "github";
+    const codeStyleDropdown = <HTMLSelectElement>document.getElementById("codeStyleDropdown");
+    codeStyleDropdown.value = docketProps.settings.codeStyle;
+    updateCodeStyle();
+
+    docketProps.settings.uiTheme = result.uiTheme || "light";
+    const darkModeSlider = <HTMLInputElement>document.getElementById("darkModeSlider");
+    darkModeSlider.checked = result.uiTheme === "dark";
+    toggleDarkMode();
+  });
+
+  docketProps.tempProps.popupMode = window.location.search.includes("popup=true");
+  if (docketProps.tempProps.popupMode) {
+    document.getElementById("docketBody")?.classList.add("popup");
+    readerMode();
+  }
+};
+```
+
+This function:
+- Opens the IndexedDB connection
+- Loads and applies user settings from Chrome storage
+- Detects popup mode from URL parameters
+- Sets default view mode for popup (reader mode)

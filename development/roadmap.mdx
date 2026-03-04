@@ -1,0 +1,194 @@
+---
+title: "Docket Roadmap"
+description: "Planned features and improvements for the Docket markdown notes extension"
+---
+
+## Future Development
+
+Docket is actively being developed with exciting new features and improvements planned. This roadmap outlines the vision for future versions of the extension.
+
+<Note>
+Feature requests are always welcome! If you have ideas or want to contribute to these goals, check out our [contributing guide](/development/contributing).
+</Note>
+
+## Large Overhauls
+
+These are major features that will significantly enhance Docket's capabilities:
+
+<Accordion title="Cross Device Sync" icon="cloud">
+**Status:** Work in progress
+
+Sync your markdown notes across all your devices seamlessly!
+
+**Current Progress:**
+- Backend and database design in progress
+- Infrastructure planning for multi-device synchronization
+- Considering privacy and security implications
+
+**What This Means:**
+- Access your notes from any Chrome browser
+- Automatic synchronization across devices
+- No more manual import/export for device switching
+
+**How to Contribute:**
+This is a complex feature requiring backend development expertise. If you have experience with:
+- Cloud infrastructure and APIs
+- Database design for sync systems
+- Chrome extension storage sync mechanisms
+
+Your contributions would be valuable!
+</Accordion>
+
+<Accordion title="Concurrent Editing with CRDT/OT" icon="users">
+**Status:** Planned
+
+Implement support for live or concurrent editing using Conflict-free Replicated Data Types (CRDT) or Operational Transformation (OT).
+
+**Why This Matters:**
+- Edit the same note from multiple browser instances
+- Prevent conflicts when editing across devices
+- Enable real-time collaboration features in the future
+
+**Dependencies:**
+- Cross device sync needs to be implemented first
+- Basic manual sync is the priority before tackling concurrent editing
+
+**How to Contribute:**
+If you have experience with:
+- CRDT implementations (Yjs, Automerge, etc.)
+- Operational Transformation algorithms
+- Distributed systems and conflict resolution
+
+This would be an exciting feature to help build!
+</Accordion>
+
+## Editor Features
+
+Enhancements to the editing experience:
+
+<Accordion title="Keyboard Shortcuts" icon="keyboard">
+**Status:** ✅ Completed
+
+Keyboard shortcuts for common markdown actions like bold, italic, and more are now available!
+</Accordion>
+
+<Accordion title="Import/Export Improvements" icon="file-arrow-down">
+**Status:** Partially complete
+
+**Current Status:**
+- Basic import functionality works - just paste markdown into the editor
+- Bulk export still being refined
+
+**Challenges:**
+- Chrome extension file access restrictions
+- Balancing functionality with browser security limitations
+
+**Future Goals:**
+- Streamlined bulk export of all notes
+- Better file format handling
+- Improved import workflow
+
+**How to Contribute:**
+Help improve the import/export experience within Chrome's security constraints. Ideas for UX improvements are especially welcome!
+</Accordion>
+
+## Autosave Features
+
+<Accordion title="Multi-Instance Sync" icon="rotate">
+**Status:** ✅ Completed
+
+Docket now queries Chrome storage when you refocus a tab or extension, preventing data loss when multiple instances are open simultaneously.
+</Accordion>
+
+## Optimizations and Quality of Life
+
+Performance improvements and UX enhancements:
+
+<Accordion title="Note Reordering" icon="arrows-up-down">
+**Status:** ✅ Completed
+
+You can now reorder your notes to organize them however you prefer!
+</Accordion>
+
+<Accordion title="Lazy Render Markdown" icon="bolt">
+**Status:** Planned
+
+Optimize rendering by only re-rendering markdown when changes are detected.
+
+**Challenges:**
+- Requires sourcemapping markdown to rendered HTML
+- Non-trivial implementation complexity
+- Need to maintain accurate change detection
+
+**Benefits:**
+- Improved performance for large documents
+- Reduced CPU usage
+- Smoother editing experience
+
+**How to Contribute:**
+If you have experience with:
+- Source mapping and AST transformation
+- React/DOM diffing algorithms
+- Performance optimization in web applications
+
+This feature would greatly benefit from your expertise!
+</Accordion>
+
+<Accordion title="Scroll Sync" icon="arrows-up-down-left-right">
+**Status:** Planned
+
+Synchronize scrolling between the markdown editor and the rendered HTML preview.
+
+**Challenges:**
+- Requires sourcemapping markdown to rendered HTML
+- Need to maintain position correspondence during edits
+- Complex edge cases with code blocks and nested elements
+
+**Benefits:**
+- Better visual feedback while editing
+- Easier to see rendered output of current editing position
+- Improved split-view editing experience
+
+**How to Contribute:**
+Similar to lazy rendering, this requires sourcemapping expertise. If you've worked with:
+- Editor scroll synchronization
+- Markdown-to-HTML position mapping
+- Monaco Editor or similar projects
+
+Your insights would be valuable!
+</Accordion>
+
+## Contributing to the Roadmap
+
+Want to help make these features a reality?
+
+<Card title="Start Contributing" icon="code" href="/development/contributing">
+Check out our contributing guide to learn how to:
+- Set up your development environment
+- Submit pull requests
+- Report bugs and request features
+- Join the Docket development community
+</Card>
+
+### Priority Areas
+
+If you're looking to contribute, these areas would have the most impact:
+
+1. **Cross Device Sync** - The most requested feature
+2. **Performance Optimizations** - Lazy rendering and scroll sync
+3. **Import/Export** - Making bulk operations smoother
+4. **Testing and Bug Reports** - Always valuable!
+
+### Share Your Ideas
+
+Have suggestions not listed here? We want to hear them!
+
+- Open an issue on [GitHub](https://github.com/lordexodius/docket)
+- Explain your use case and how the feature would help
+- Discuss implementation approaches
+
+<Note type="info">
+Remember: The Chrome Web Store version may be a few versions behind. For the latest features and updates, consider using the extension in developer mode from the GitHub repository!
+</Note>
+
+Thank you for your interest in Docket's future!

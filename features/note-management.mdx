@@ -1,0 +1,303 @@
+---
+title: Note Management
+description: Create, organize, and manage your markdown notes with IndexedDB storage
+icon: folder
+---
+
+Docket provides a comprehensive note management system with persistent storage using IndexedDB and automatic saving functionality.
+
+## Note Structure
+
+Each note in Docket follows a standardized structure defined in `definitions.ts`:
+
+```typescript
+interface UserNote {
+  uuid: string;           // Unique identifier for the note
+  title: string;          // Title of the note
+  body: string;           // Body of the note in markdown format
+  lastUpdated: number;    // Timestamp in milliseconds since epoch
+  lastSynced?: number;    // Optional: Last sync timestamp
+}
+```
+
+<Info>
+Every note is assigned a unique UUID generated using `crypto.randomUUID()` for reliable identification and storage.
+</Info>
+
+## Creating Notes
+
+Create new notes using the `createNote` function, which automatically adds the note to both the note store and IndexedDB:
+
+```typescript
+const createNote = (noteTemplate?: Partial<UserNote>): UserNote => {
+  const newNote: UserNote = {
+    uuid: crypto.randomUUID(),
+    title: noteTemplate?.title || "New Note",
+    body: noteTemplate?.body || "",
+    lastUpdated: Date.now(),
+  };
+
+  // Add to note store
+  setNoteByUUID(newNote.uuid, newNote);
+
+  // Add to IndexedDB
+  docketProps.dbConnection?.transaction("notes", "readwrite")
+    .objectStore("notes").add(newNote);
+
+  renderNoteList();
+  saveNoteOrder();
+  return newNote;
+};
+```
+
+<Card title="Create a New Note" icon="plus">
+  Click the "New Note" button in the sidebar or use the `newNoteHandler()` function to create a blank note instantly.
+</Card>
+
+## Switching Between Notes
+
+Switch between notes using the `setActiveNote` function, which updates the editor and preview:
+
+```typescript
+const setActiveNote = (userNote: UserNote) => {
+  // Remove styling from previous active note
+  const prevActiveNote = document.getElementById(docketProps.activeNoteUUID);
+  prevActiveNote?.classList.remove("active");
+  
+  // Set active note UUID
+  docketProps.activeNoteUUID = userNote.uuid;
+  
+  // Set active note in local storage
+  chrome.storage.local.set({ activeNoteUUID: docketProps.activeNoteUUID });
+  
+  // Update UI elements
+  noteTitleElement.value = userNote.title;
+  noteEditorElement.value = userNote.body;
+  noteListItem?.classList.add("active");
+  
+  saveActiveNote();
+  renderMarkdown();
+};
+```
+
+<Steps>
+  <Step title="User clicks note">
+    The `noteClickHandler` is triggered with the note's UUID
+  </Step>
+  <Step title="Note loaded">
+    `setActiveNote` loads the note content into the editor
+  </Step>
+  <Step title="UI updated">
+    The editor, preview, and sidebar reflect the active note
+  </Step>
+</Steps>
+
+## Deleting Notes
+
+Delete notes using the `deleteNoteByUUID` function with confirmation:
+
+```typescript
+const deleteNoteByUUID = (uuid: string) => {
+  // Remove note from noteStore
+  docketProps.noteStore.noteMap.delete(uuid);
+
+  // Delete note from IndexedDB
+  docketProps.dbConnection?.transaction("notes", "readwrite")
+    .objectStore("notes").delete(uuid);
+
+  // Add note to deleted notes set for syncing later
+  docketProps.noteStore.deletedNotes.add(uuid);
+
+  // Reindex remaining notes
+  const index = docketProps.noteStore.UUIDToIndex.get(uuid);
+  if (index !== undefined) {
+    for (let i = index + 1; i < docketProps.noteStore.indexToUUID.size; i++) {
+      let uuidAtIndex = docketProps.noteStore.indexToUUID.get(i);
+      if (uuidAtIndex) {
+        docketProps.noteStore.UUIDToIndex.set(uuidAtIndex, i - 1);
+        docketProps.noteStore.indexToUUID.set(i - 1, uuidAtIndex);
+      }
+    }
+    docketProps.noteStore.UUIDToIndex.delete(uuid);
+    docketProps.noteStore.indexToUUID.delete(
+      docketProps.noteStore.indexToUUID.size - 1
+    );
+  }
+  
+  saveNoteOrder();
+  renderNoteList();
+};
+```
+
+<Warning>
+Deleting a note requires confirmation and cannot be undone. The note is permanently removed from IndexedDB storage.
+</Warning>
+
+## IndexedDB Storage
+
+Docket uses IndexedDB (`docketDB`) for persistent local storage with two object stores:
+
+### Database Structure
+
+<CodeGroup>
+```typescript Database Initialization
+const initDbConnection = async () => {
+  const request = indexedDB.open("docketDB", 1);
+  
+  request.onupgradeneeded = (event) => {
+    const db = event.target.result;
+    if (!db.objectStoreNames.contains("notes")) {
+      db.createObjectStore("notes", { keyPath: "uuid" });
+      db.createObjectStore("noteOrder", { keyPath: "index" });
+    }
+  };
+  
+  request.onsuccess = (event) => {
+    docketProps.dbConnection = request.result;
+    loadIndexedDbNoteOrder(docketProps.dbConnection);
+    loadIndexedDbNotes(docketProps.dbConnection);
+  };
+};
+```
+
+```typescript Loading Notes
+const loadIndexedDbNotes = (db: IDBDatabase) => {
+  const transaction = db.transaction("notes", "readonly");
+  const notesStore = transaction.objectStore("notes");
+  const request = notesStore.getAll();
+  
+  request.onsuccess = (event) => {
+    const notes = event.target.result;
+    notes.forEach((note: UserNote) => {
+      setNoteByUUID(note.uuid, note);
+    });
+    renderNoteList();
+    loadActiveNote();
+  };
+};
+```
+</CodeGroup>
+
+### Object Stores
+
+<CardGroup cols={2}>
+  <Card title="notes" icon="database">
+    Stores all note content with UUID as the primary key
+  </Card>
+  <Card title="noteOrder" icon="list-ol">
+    Stores the order of notes in the sidebar as a serialized map
+  </Card>
+</CardGroup>
+
+## Autosave Functionality
+
+Docket automatically saves your notes as you type using a debounced input handler:
+
+```typescript
+const handleInput = (lastExecuted: LastExecuted) => {
+  let currTime = Date.now();
+  
+  // Debounce final input
+  lastExecuted.msSinceLastInput = currTime;
+  setTimeout(debounce, timeout, lastExecuted);
+
+  // Re-render every `timeout` ms while typing
+  if (currTime - lastExecuted.msSinceLastUpdate > timeout) {
+    renderMarkdown();
+    saveActiveNote();
+    renderNoteList();
+    lastExecuted.msSinceLastUpdate = currTime;
+  }
+};
+
+const saveActiveNote = () => {
+  const userNote = getActiveNote();
+  if (userNote) {
+    userNote.title = htmlDecode(getHTMLNoteTitle());
+    userNote.body = htmlDecode(getHTMLEditorText());
+    userNote.lastUpdated = Date.now();
+
+    // Update in IndexedDB
+    const transaction = docketProps.dbConnection.transaction("notes", "readwrite");
+    const notesStore = transaction.objectStore("notes");
+    notesStore.put(userNote);
+  }
+};
+```
+
+<Tip>
+Notes are automatically saved to IndexedDB as you type, with no manual save action required. The `lastUpdated` timestamp is updated with each save.
+</Tip>
+
+## Note Store
+
+The in-memory note store maintains three synchronized data structures for efficient note management:
+
+```typescript
+interface NoteStore {
+  noteMap: Map<string, UserNote>;      // UUID → Note object
+  indexToUUID: Map<number, string>;     // Index → UUID
+  UUIDToIndex: Map<string, number>;     // UUID → Index
+  deletedNotes: Set<string>;            // Deleted note UUIDs
+}
+```
+
+<Info>
+The note store uses bidirectional maps to enable fast lookups by both UUID and index, supporting efficient drag-and-drop reordering.
+</Info>
+
+## Retrieving Notes
+
+Access notes using either UUID or index:
+
+```typescript
+// Get note by UUID
+const getNoteByUUID = (uuid: string): UserNote => {
+  return docketProps.noteStore.noteMap.get(uuid) || createNote();
+};
+
+// Get note by index
+const getNoteByIndex = (index: number): UserNote => {
+  const uuid = docketProps.noteStore.indexToUUID.get(index);
+  return docketProps.noteStore.noteMap.get(uuid!) || createNote();
+};
+
+// Get currently active note
+const getActiveNote = (): UserNote | undefined => {
+  return getNoteByUUID(docketProps.activeNoteUUID);
+};
+```
+
+## Drag-and-Drop Reordering
+
+Notes can be reordered in the sidebar using drag-and-drop functionality. The `moveNoteToIndex` function updates all affected note indices:
+
+```typescript
+const moveNoteToIndex = (uuid: string, targetIndex: number) => {
+  const prevIndex = docketProps.noteStore.UUIDToIndex.get(uuid);
+  
+  if (prevIndex && prevIndex < targetIndex) {
+    // Moving down: decrement indices between prevIndex and targetIndex
+    for (let i = prevIndex + 1; i <= targetIndex; i++) {
+      let uuidAtIndex = docketProps.noteStore.indexToUUID.get(i);
+      if (uuidAtIndex) {
+        docketProps.noteStore.UUIDToIndex.set(uuidAtIndex, i - 1);
+        docketProps.noteStore.indexToUUID.set(i - 1, uuidAtIndex);
+      }
+    }
+  } else if (prevIndex && prevIndex > targetIndex) {
+    // Moving up: increment indices between targetIndex and prevIndex
+    for (let i = prevIndex - 1; i >= targetIndex; i--) {
+      let uuidAtIndex = docketProps.noteStore.indexToUUID.get(i);
+      if (uuidAtIndex) {
+        docketProps.noteStore.UUIDToIndex.set(uuidAtIndex, i + 1);
+        docketProps.noteStore.indexToUUID.set(i + 1, uuidAtIndex);
+      }
+    }
+  }
+  
+  docketProps.noteStore.UUIDToIndex.set(uuid, targetIndex);
+  docketProps.noteStore.indexToUUID.set(targetIndex, uuid);
+  saveNoteOrder();
+};
+```

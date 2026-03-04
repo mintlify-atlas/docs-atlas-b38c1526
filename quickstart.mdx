@@ -1,80 +1,306 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get started with Docket in minutes
 ---
 
-## Get started in three steps
+## Welcome to Docket
 
-Get your documentation site running locally and make your first customization.
+This guide will walk you through creating your first note and using Docket's core features. By the end, you'll be productive with markdown notes right in your browser.
 
-### Step 1: Set up your local environment
+## Your First Note
+
+<Steps>
+  <Step title="Open Docket">
+    Open a new tab in Chrome. You should see the Docket interface with a default note ready.
+    
+    The interface has three main areas:
+    - **Sidebar** (left) - List of all your notes
+    - **Editor** (center) - Where you write markdown
+    - **Preview** (right) - Live rendered view of your markdown
+  </Step>
+  
+  <Step title="Name your note">
+    Click the title field at the top and give your note a meaningful name, like "My First Note" or "Quick References".
+    
+    <Note>
+      Note titles appear in the sidebar for easy navigation. They're automatically saved as you type.
+    </Note>
+  </Step>
+  
+  <Step title="Write some markdown">
+    In the editor panel, try writing some markdown:
+    
+    ```markdown
+    # Welcome to Docket
+    
+    This is my first note. Markdown makes it easy to:
+    
+    - Create **bold** and *italic* text
+    - Build lists and checklists
+    - Add code snippets
+    - Link to [websites](https://example.com)
+    
+    ## Code Example
+    
+    You can add code blocks with syntax highlighting for JavaScript, Python, and more!
+    ```
+    
+    Watch the preview panel update in real-time as you type!
+  </Step>
+  
+  <Step title="See the live preview">
+    The right panel shows your rendered markdown with:
+    - Formatted text and headers
+    - Syntax-highlighted code blocks
+    - Clickable links
+    - Styled lists and quotes
+  </Step>
+</Steps>
+
+## Essential Keyboard Shortcuts
+
+Speed up your markdown editing with these keyboard shortcuts:
 
 <AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
+  <Accordion title="Text Formatting">
+    - **Ctrl+B** - Make selected text **bold**
+    - **Ctrl+I** - Make selected text *italic*
+    - **~** - Wrap selected text with ~~strikethrough~~ (type ~ with text selected)
+    - **`** - Wrap selected text as `inline code` (type backtick with text selected)
   </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
+  
+  <Accordion title="Links & Navigation">
+    - **Ctrl+L** - Create a markdown link from selected text
+    - **Ctrl+H** - Toggle the sidebar visibility
+    - **Tab** - Insert a tab character in the editor
   </Accordion>
 </AccordionGroup>
 
-### Step 2: Deploy your changes
+### Try it yourself
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+1. Type some text in the editor
+2. Select the text with your mouse or keyboard
+3. Press **Ctrl+B** to make it bold
+4. Select different text and press **Ctrl+I** for italic
+
+The markdown syntax is added automatically around your selection!
+
+## Customize Your Experience
+
+### Toggle Dark Mode
+
+<Steps>
+  <Step title="Find the theme toggle">
+    Look for the dark mode slider in the sidebar settings area
+  </Step>
+  
+  <Step title="Switch to dark mode">
+    Click the toggle to enable dark mode. The entire interface switches to a dark theme that's easier on the eyes.
+  </Step>
+</Steps>
+
+### Change Code Highlighting Style
+
+Docket supports multiple syntax highlighting themes for code blocks:
+
+<Steps>
+  <Step title="Open the code style dropdown">
+    Find the code style selector in the sidebar (default is "github")
+  </Step>
+  
+  <Step title="Choose a theme">
+    Select from available themes to change how code blocks are highlighted in the preview
+  </Step>
+</Steps>
+
+### Switch View Modes
+
+Docket offers three view modes to match your workflow:
+
+<CodeGroup>
+```text Editor Mode
+┌─────────────┐
+│             │
+│   Editor    │
+│    Only     │
+│             │
+└─────────────┘
+```
+
+```text Split Mode (default)
+┌──────┬──────┐
+│      │      │
+│Editor│Review│
+│      │      │
+└──────┴──────┘
+```
+
+```text Reader Mode
+┌─────────────┐
+│             │
+│   Preview   │
+│    Only     │
+│             │
+└─────────────┘
+```
+</CodeGroup>
+
+Use the view mode radio buttons in the toolbar to switch between:
+- **Editor** - Focus on writing without distractions
+- **Split** - See markdown and preview side-by-side (default)
+- **Reader** - Read your rendered notes without the editor
+
+## Working with Multiple Notes
+
+### Create a new note
+
+<Steps>
+  <Step title="Click the new note button">
+    Find the "+" or "New Note" button in the sidebar
+  </Step>
+  
+  <Step title="Start writing">
+    Your new note is created and ready. Give it a title and start adding content.
+  </Step>
+</Steps>
+
+### Organize your notes
+
+- **Reorder notes**: Drag and drop notes in the sidebar to rearrange them
+- **Switch notes**: Click any note in the sidebar to open it
+- **Delete notes**: Use the delete button (confirm when prompted)
+
+<Warning>
+  Deleted notes cannot be recovered. Consider exporting important notes as backups.
+</Warning>
+
+### Export a note
+
+To save a note as a markdown file:
+
+<Steps>
+  <Step title="Open the note you want to export">
+    Click the note in the sidebar to make it active
+  </Step>
+  
+  <Step title="Click the download button">
+    Find and click the download/export button in the toolbar
+  </Step>
+  
+  <Step title="Save the file">
+    Your note downloads as a `.md` file with the note's title as the filename
+  </Step>
+</Steps>
+
+## Code Syntax Highlighting
+
+Docket supports syntax highlighting for multiple programming languages:
+
+<Tabs>
+  <Tab title="JavaScript">
+    ```javascript
+    const notes = await fetchNotes();
+    notes.forEach(note => {
+      console.log(note.title);
+    });
+    ```
+  </Tab>
+  
+  <Tab title="Python">
+    ```python
+    def process_notes(notes):
+        for note in notes:
+            print(note['title'])
+    ```
+  </Tab>
+  
+  <Tab title="Rust">
+    ```rust
+    fn process_notes(notes: Vec<Note>) {
+        for note in notes {
+            println!("{}", note.title);
+        }
+    }
+    ```
+  </Tab>
+  
+  <Tab title="TypeScript">
+    ```typescript
+    interface Note {
+      title: string;
+      body: string;
+      uuid: string;
+    }
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    function displayNote(note: Note): void {
+      console.log(note.title);
+    }
+    ```
+  </Tab>
+</Tabs>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+Supported languages: C, C++, Java, JavaScript, Python, Rust, TypeScript, and plaintext.
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+## Advanced Markdown Features
 
-### Step 3: Go live
+Docket uses GitHub Flavored Markdown (GFM) with additional extensions:
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+### Footnotes
 
-## Next steps
+```markdown
+Here's a sentence with a footnote[^1].
 
-Now that you have your docs running, explore these key features:
+[^1]: This is the footnote content.
+```
+
+### Alerts (GitHub-style)
+
+```markdown
+> [!NOTE]
+> Useful information that users should know.
+
+> [!WARNING]
+> Critical content demanding immediate attention.
+```
+
+### Task Lists
+
+```markdown
+- [x] Complete the quickstart guide
+- [ ] Create my project notes
+- [ ] Export important notes as backup
+```
+
+## Tips for Power Users
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Auto-save" icon="floppy-disk">
+    Notes save automatically as you type. No save button needed!
+  </Card>
+  
+  <Card title="Popup Mode" icon="window-maximize">
+    Docket can also run as a popup. Check the extension popup for quick access.
+  </Card>
+  
+  <Card title="Multi-instance sync" icon="rotate">
+    If you have Docket open in multiple tabs, it syncs when you refocus tabs to prevent conflicts.
+  </Card>
+  
+  <Card title="Sidebar toggle" icon="sidebar">
+    Press Ctrl+H to quickly show/hide the sidebar for distraction-free writing.
+  </Card>
 </CardGroup>
 
+## Next Steps
+
+Now that you're familiar with the basics, explore more advanced workflows:
+
+- Create dedicated notes for different projects or topics
+- Use code blocks for snippets you reference frequently  
+- Organize notes with drag-and-drop for quick access
+- Experiment with dark mode and different code themes
+- Export important notes regularly as backups
+
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  For detailed feature guides, keyboard shortcuts, and advanced tips, check out the Guides section.
 </Note>

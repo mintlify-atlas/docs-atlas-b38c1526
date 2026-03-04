@@ -1,0 +1,305 @@
+---
+title: Organizing Notes
+description: Master note organization with drag-and-drop reordering and the sidebar navigation system
+---
+
+## Sidebar Navigation
+
+The sidebar provides quick access to all your notes with:
+
+- **Scrollable note list** - All notes displayed vertically
+- **Active note highlighting** - Current note marked with `.active` class
+- **Hover effects** - Visual feedback on mouse-over
+- **Keyboard navigation** - Tab through notes with `tabindex` attribute
+- **Toggle visibility** - Show/hide with Ctrl+H
+
+```typescript
+// index.ts:663-670
+const toggleSidebar = () => {
+  const sidebar = <HTMLElement>document.getElementById("sidebar");
+  if ((!sidebar.style.display && window.innerWidth < 768) || sidebar.style.display === "none") {
+    openSidebar();
+  } else {
+    closeSidebar();
+  }
+};
+```
+
+<Tip>
+Press **Ctrl+H** to quickly toggle the sidebar visibility. On mobile (< 768px), the sidebar auto-hides by default.
+</Tip>
+
+## Drag-and-Drop Reordering
+
+Reorder your notes by dragging them to new positions in the sidebar. Docket uses the `moveNoteToIndex` function to maintain consistent ordering:
+
+### How Drag-and-Drop Works
+
+<Steps>
+  <Step title="Drag Start">
+    Click and hold on any note in the sidebar. The note becomes semi-transparent and stores its UUID in the drag data.
+    
+    ```typescript
+    // index.ts:328-335
+    noteElement.addEventListener("dragstart", (e) => {
+      if (e.dataTransfer != undefined) {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", note.uuid);
+        docketProps.tempProps.draggedNote = <HTMLLIElement>e.target;
+        noteElement.classList.add("dragging");
+      }
+    });
+    ```
+  </Step>
+  
+  <Step title="Drag Over">
+    Hover over the target position. The target note highlights to show where the dragged note will be inserted.
+    
+    ```typescript
+    // index.ts:342-348
+    noteElement.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      if (e.dataTransfer != undefined) {
+        e.dataTransfer.dropEffect = "move";
+        (<HTMLLIElement>e.target).classList.add("over");
+      }
+    });
+    ```
+  </Step>
+  
+  <Step title="Drop">
+    Release the mouse to drop the note at the new position. The `moveNoteToIndex` function updates all affected indices.
+    
+    ```typescript
+    // index.ts:352-381
+    noteElement.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const draggedUUID = e.dataTransfer.getData("text/plain");
+      const targetUUID = (<HTMLLIElement>e.target).id;
+      const targetIndex = docketProps.noteStore.UUIDToIndex.get(targetUUID)!;
+      
+      // Update note order in note store
+      moveNoteToIndex(draggedUUID, targetIndex!);
+    });
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+Drag-and-drop only works on elements with the `noteListItem` class. The function validates the target before processing the drop.
+</Warning>
+
+## Note Indexing System
+
+Docket maintains note order using two synchronized maps that enable O(1) lookups:
+
+### Index Mapping Architecture
+
+<CardGroup cols={2}>
+  <Card title="indexToUUID" icon="arrow-right">
+    Maps numeric index → note UUID
+    
+    ```typescript
+    // Example:
+    0 → "abc-123-def"
+    1 → "ghi-456-jkl"
+    2 → "mno-789-pqr"
+    ```
+  </Card>
+  
+  <Card title="UUIDToIndex" icon="arrow-left">
+    Maps note UUID → numeric index
+    
+    ```typescript
+    // Example:
+    "abc-123-def" → 0
+    "ghi-456-jkl" → 1
+    "mno-789-pqr" → 2
+    ```
+  </Card>
+</CardGroup>
+
+### The moveNoteToIndex Function
+
+This function handles the complex logic of reordering notes:
+
+```typescript
+// index.ts:230-257
+const moveNoteToIndex = (uuid: string, targetIndex: number) => {
+  const prevIndex = docketProps.noteStore.UUIDToIndex.get(uuid);
+  
+  if (prevIndex && prevIndex < targetIndex) {
+    // Moving down: decrement indices between prevIndex and targetIndex
+    for (let i = prevIndex + 1; i <= targetIndex; i++) {
+      let uuidAtIndex = docketProps.noteStore.indexToUUID.get(i);
+      if (uuidAtIndex) {
+        docketProps.noteStore.UUIDToIndex.set(uuidAtIndex, i - 1);
+        docketProps.noteStore.indexToUUID.set(i - 1, uuidAtIndex);
+      }
+    }
+  } else if (prevIndex && prevIndex > targetIndex) {
+    // Moving up: increment indices between targetIndex and prevIndex
+    for (let i = prevIndex - 1; i >= targetIndex; i--) {
+      let uuidAtIndex = docketProps.noteStore.indexToUUID.get(i);
+      if (uuidAtIndex) {
+        docketProps.noteStore.UUIDToIndex.set(uuidAtIndex, i + 1);
+        docketProps.noteStore.indexToUUID.set(i + 1, uuidAtIndex);
+      }
+    }
+  }
+  
+  // Update the note's index
+  docketProps.noteStore.UUIDToIndex.set(uuid, targetIndex);
+  docketProps.noteStore.indexToUUID.set(targetIndex, uuid);
+  saveNoteOrder();
+};
+```
+
+<Accordion title="How the indexing algorithm works">
+  When moving a note:
+  
+  1. **Determine direction** - Is the note moving up or down the list?
+  2. **Shift affected notes** - Increment or decrement indices of notes in between
+  3. **Update target note** - Set the moved note to its new index
+  4. **Persist to database** - Save the new order to IndexedDB
+  
+  **Example:** Moving note at index 1 to index 3
+  
+  ```
+  Before:    After:
+  0 → A      0 → A
+  1 → B      1 → C (was 2)
+  2 → C      2 → D (was 3)
+  3 → D      3 → B (moved)
+  4 → E      4 → E
+  ```
+</Accordion>
+
+## Active Note Selection
+
+Click any note in the sidebar to make it active. The active note:
+
+- Displays in the editor/preview panes
+- Has the `.active` class for styling
+- Persists to `chrome.storage.local`
+- Restores on app reload
+
+```typescript
+// index.ts:512-528
+const setActiveNote = (userNote: UserNote) => {
+  // Remove styling from previous active note
+  const prevActiveNote = <HTMLLIElement>document.getElementById(docketProps.activeNoteUUID);
+  prevActiveNote?.classList.remove("active");
+  
+  // Set active note UUID
+  docketProps.activeNoteUUID = userNote.uuid;
+  
+  // Set active note in local storage
+  chrome.storage.local.set({ activeNoteUUID: docketProps.activeNoteUUID });
+  
+  const noteTitleElement = <HTMLInputElement>document.getElementById("noteTitle");
+  const noteEditorElement = <HTMLInputElement>document.getElementById("markdownInput");
+  const noteListItem = <HTMLLIElement>document.getElementById(docketProps.activeNoteUUID);
+  
+  noteTitleElement.value = docketProps.noteStore.noteMap.get(userNote.uuid)!.title;
+  noteEditorElement.value = docketProps.noteStore.noteMap.get(userNote.uuid)!.body;
+  noteListItem?.classList.add("active");
+  
+  saveActiveNote();
+  renderMarkdown();
+};
+```
+
+## Note List Rendering
+
+The `renderNoteList` function rebuilds the sidebar whenever note order or content changes:
+
+```typescript
+// index.ts:296-388
+const renderNoteList = () => {
+  const noteListElement = document.getElementById("noteList");
+  (<HTMLElement>noteListElement).innerHTML = "";
+  
+  // Sort notes by index
+  let UUIDsByIndex = [...docketProps.noteStore.UUIDToIndex.entries()]
+    .sort((a, b) => a[1] - b[1]);
+  
+  UUIDsByIndex.forEach((uuidAndIndex, _index) => {
+    let uuid = uuidAndIndex[0];
+    let note = docketProps.noteStore.noteMap.get(uuid);
+    
+    let noteElement: HTMLLIElement = document.createElement("li");
+    noteElement.classList.add("noteListItem");
+    noteElement.id = uuid;
+    noteElement.draggable = true;
+    noteElement.title = note.title; // Tooltip shows full title
+    
+    if (uuid === docketProps.activeNoteUUID) {
+      noteElement.classList.add("active");
+    }
+    
+    // Add event listeners for hover, drag, click...
+    noteElement.innerHTML = DOMPurify.sanitize(note.title);
+    (<HTMLElement>noteListElement).appendChild(noteElement);
+  });
+};
+```
+
+<Note>
+Note titles are sanitized with DOMPurify before rendering to prevent XSS attacks. Full titles appear as tooltips on hover.
+</Note>
+
+## Creating and Deleting Notes
+
+<Tabs>
+  <Tab title="Create New Note">
+    Click the "New Note" button to create a note with:
+    
+    - Unique UUID generated by `crypto.randomUUID()`
+    - Default title "New Note"
+    - Empty body
+    - Current timestamp
+    
+    ```typescript
+    // index.ts:487-506
+    const createNote = (noteTemplate?: Partial<UserNote>): UserNote => {
+      const newNote: UserNote = {
+        uuid: crypto.randomUUID(),
+        title: noteTemplate?.title || "New Note",
+        body: noteTemplate?.body || "",
+        lastUpdated: Date.now(),
+      };
+      
+      setNoteByUUID(newNote.uuid, newNote);
+      docketProps.dbConnection?.transaction("notes", "readwrite")
+        .objectStore("notes").add(newNote);
+      
+      renderNoteList();
+      saveNoteOrder();
+      return newNote;
+    };
+    ```
+  </Tab>
+  
+  <Tab title="Delete Note">
+    Click the delete button and confirm to remove a note. The system:
+    
+    1. Removes from noteMap
+    2. Deletes from IndexedDB
+    3. Updates all subsequent indices
+    4. Sets active note to first note (or creates new if empty)
+    
+    ```typescript
+    // index.ts:537-541
+    const deleteActiveNote = () => {
+      if (confirm("Are you sure you want to delete this note?")) {
+        deleteNoteByUUID(docketProps.activeNoteUUID);
+      }
+    };
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+Deleting a note is permanent! The note is removed from IndexedDB immediately. Consider exporting important notes before deletion.
+</Warning>

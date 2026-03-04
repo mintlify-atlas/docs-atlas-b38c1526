@@ -1,0 +1,229 @@
+---
+title: Building from Source
+description: Build and install Docket locally from the source code
+---
+
+Docket can be built from source and loaded as an unpacked Chrome extension. This is useful for development or to use the latest unreleased version.
+
+## Prerequisites
+
+You'll need:
+- Node.js and npm installed
+- Chrome, Edge, or another Chromium-based browser
+- Git (to clone the repository)
+
+## Clone Repository
+
+First, clone the Docket repository:
+
+```bash
+git clone https://github.com/LordExodius/docket.git
+cd docket
+```
+
+Alternatively, download and unzip the source code from GitHub.
+
+## Install Dependencies
+
+Install all required npm packages:
+
+```bash
+npm install
+```
+
+### Dependencies
+
+Docket uses these key dependencies:
+
+<ParamField path="marked" type="dependency" default="^13.0.1">
+  Markdown parsing library with GitHub Flavored Markdown support
+</ParamField>
+
+<ParamField path="highlight.js" type="dependency" default="^11.9.0">
+  Syntax highlighting for code blocks in multiple languages
+</ParamField>
+
+<ParamField path="dompurify" type="dependency" default="^3.1.5">
+  HTML sanitization to prevent XSS attacks in rendered markdown
+</ParamField>
+
+<ParamField path="marked-alert" type="dependency" default="^2.1.2">
+  Extension for alert/callout blocks (GitHub-style)
+</ParamField>
+
+<ParamField path="marked-footnote" type="dependency" default="^1.2.2">
+  Extension for footnote support
+</ParamField>
+
+<ParamField path="marked-highlight" type="dependency" default="^2.1.3">
+  Integration between Marked.js and highlight.js
+</ParamField>
+
+### Build Tooling
+
+Docket uses **rspack** for fast bundling:
+
+<ParamField path="@rspack/core" type="devDependency" default="^1.4.4">
+  High-performance bundler built with Rust
+</ParamField>
+
+<ParamField path="@rspack/cli" type="devDependency" default="^1.4.4">
+  Command-line interface for rspack
+</ParamField>
+
+<ParamField path="typescript" type="devDependency" default="^5.5.2">
+  TypeScript compiler for type checking and transpilation
+</ParamField>
+
+<ParamField path="@types/chrome" type="devDependency" default="^0.0.268">
+  TypeScript definitions for Chrome Extension APIs
+</ParamField>
+
+## Build Commands
+
+### Production Build
+
+To create a production build:
+
+```bash
+npm run build
+```
+
+This runs `rspack` and outputs compiled files to the `dist/` directory.
+
+### Development Mode (Watch)
+
+For active development with automatic rebuilding:
+
+```bash
+npm run start
+```
+
+This runs `rspack --watch`, which:
+- Rebuilds automatically when source files change
+- Speeds up the development cycle
+- Outputs to the same `dist/` directory
+
+You'll need to reload the extension in Chrome after each rebuild.
+
+## dist/ Folder Contents
+
+After building, the `dist/` folder contains:
+
+```
+dist/
+├── index.html          # Main extension page
+├── index.js            # Bundled JavaScript (from src/index.ts)
+├── style.css           # Main stylesheet
+└── code_themes/        # Code syntax highlighting themes
+    ├── github.css
+    ├── monokai.css
+    └── ...             # Additional highlight.js themes
+```
+
+The bundler:
+- Compiles TypeScript to JavaScript
+- Bundles all dependencies into `index.js`
+- Preserves static assets (HTML, CSS)
+- Includes third-party licenses
+
+## Loading Unpacked Extension
+
+Once built, load Docket as an unpacked extension:
+
+<Steps>
+  <Step title="Open Extensions Page">
+    Navigate to `chrome://extensions/` in your Chrome browser
+  </Step>
+  
+  <Step title="Enable Developer Mode">
+    Toggle the "Developer mode" switch in the top right corner
+  </Step>
+  
+  <Step title="Load Unpacked">
+    Click "Load unpacked" and select the **root folder** of the Docket repository
+    
+    Important: Select the root folder (containing `manifest.json`), not the `dist/` folder
+  </Step>
+  
+  <Step title="Verify Installation">
+    You should see Docket appear in your extensions list
+    
+    Open a new tab to see Docket's markdown editor, or click the extension icon for popup mode
+  </Step>
+</Steps>
+
+## Reloading After Changes
+
+When developing:
+
+1. Make changes to source files in `src/`
+2. Rebuild (automatic if using `npm run start`)
+3. Go to `chrome://extensions/`
+4. Click the refresh icon on the Docket extension card
+5. Reload any open Docket tabs
+
+<Warning>
+  Reloading or reinstalling the extension will **erase all saved notes**. Always export important notes before reinstalling or switching between versions.
+</Warning>
+
+## Folder Structure
+
+The repository is organized as:
+
+```
+docket/
+├── manifest.json       # Extension metadata and permissions
+├── package.json        # npm dependencies and scripts
+├── rspack.config.ts    # Build configuration
+├── icons/              # Extension icons
+├── src/                # TypeScript source code
+│   ├── index.ts        # Main application logic
+│   └── definitions.ts  # TypeScript interfaces
+└── dist/               # Compiled output (generated by build)
+    ├── index.html
+    ├── index.js
+    └── style.css
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Extension won't load">
+    - Ensure you selected the root folder containing `manifest.json`
+    - Check that you've run `npm run build` first
+    - Look for error messages on the extensions page
+  </Accordion>
+  
+  <Accordion title="Changes not appearing">
+    - Rebuild with `npm run build`
+    - Reload the extension on `chrome://extensions/`
+    - Hard refresh any open Docket tabs (Ctrl+Shift+R)
+  </Accordion>
+  
+  <Accordion title="npm install fails">
+    - Ensure Node.js is up to date (v18+ recommended)
+    - Delete `node_modules/` and `package-lock.json`, then retry
+    - Check for npm version compatibility
+  </Accordion>
+  
+  <Accordion title="Notes disappeared after reload">
+    This is expected behavior. Chrome extension storage is tied to the extension ID:
+    
+    - Uninstalling/reinstalling generates a new ID
+    - Always export notes before reinstalling
+    - Consider using the Chrome Web Store version for stable installs
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture" icon="sitemap" href="/development/architecture">
+    Learn about Docket's system architecture and design
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/development/api-reference">
+    Explore the core functions and interfaces
+  </Card>
+</CardGroup>

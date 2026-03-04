@@ -1,0 +1,200 @@
+---
+title: Using the Editor
+description: Learn how to use Docket's markdown editor with live preview and view mode switching
+---
+
+## Editor Interface Overview
+
+Docket provides a split-pane interface for writing and previewing markdown notes. The editor consists of three main components:
+
+- **Title field** - Editable note title at the top
+- **Markdown input pane** - Where you write your markdown content
+- **Preview pane** - Live-rendered HTML preview of your markdown
+
+## Writing Markdown
+
+Docket supports GitHub-flavored markdown (GFM) with additional features:
+
+<CardGroup cols={2}>
+  <Card title="Basic Formatting" icon="text">
+    - Bold: `**text**` or Ctrl+B
+    - Italic: `*text*` or Ctrl+I
+    - Strikethrough: `~~text~~`
+    - Inline code: \`code\`
+  </Card>
+  <Card title="Advanced Features" icon="code">
+    - Footnotes
+    - GitHub alerts
+    - Code highlighting (8 languages)
+    - Tables and task lists
+  </Card>
+</CardGroup>
+
+### Keyboard Shortcuts
+
+The editor includes helpful keyboard shortcuts for faster formatting:
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+B` | Wrap selection in **bold** |
+| `Ctrl+I` | Wrap selection in *italic* |
+| `Ctrl+L` | Create markdown link |
+| `~` | Wrap selection in ~~strikethrough~~ |
+| `` ` `` | Wrap selection in `inline code` |
+| `Tab` | Insert tab character |
+
+```typescript
+// From index.ts:818-827
+if (e.key === "b" && e.ctrlKey) {
+  if (markdownInput.selectionStart !== markdownInput.selectionEnd) {
+    e.preventDefault();
+    markdownInput.setRangeText(
+      "**" + markdownInput.value.substring(markdownInput.selectionStart || 0, markdownInput.selectionEnd || 0) + "**",
+      markdownInput.selectionStart || 0,
+      markdownInput.selectionEnd || 0,
+      "select"
+    );
+  }
+}
+```
+
+## Preview Pane
+
+The preview pane renders your markdown in real-time using the Marked library with:
+
+- **DOMPurify sanitization** - Prevents XSS attacks
+- **Syntax highlighting** - Powered by highlight.js
+- **Live updates** - Renders as you type with minimal debouncing
+
+<Note>
+The preview pane automatically hides when in Editor mode to maximize writing space.
+</Note>
+
+## View Mode Switching
+
+Docket offers three view modes to optimize your workflow:
+
+<Tabs>
+  <Tab title="Editor Mode">
+    **Full editor view** - Maximizes writing space by hiding the preview pane.
+    
+    ```typescript
+    // index.ts:630-635
+    const editorMode = () => {
+      docketProps.tempProps.viewMode = "editor";
+      leftPaneRadio.checked = true;
+      closeMarkdownOutput();
+      openMarkdownInput();
+    };
+    ```
+    
+    Perfect for: Initial drafting, focused writing sessions
+  </Tab>
+  
+  <Tab title="Center Mode">
+    **Split view** - Shows both editor and preview side-by-side.
+    
+    ```typescript
+    // index.ts:637-642
+    const centerMode = () => {
+      docketProps.tempProps.viewMode = "center";
+      centerPaneRadio.checked = true;
+      openMarkdownInput();
+      openMarkdownOutput();
+    };
+    ```
+    
+    Perfect for: Editing while checking formatting, writing documentation
+  </Tab>
+  
+  <Tab title="Reader Mode">
+    **Preview only** - Shows the rendered output, hiding the editor.
+    
+    ```typescript
+    // index.ts:644-649
+    const readerMode = () => {
+      docketProps.tempProps.viewMode = "reader";
+      rightPaneRadio.checked = true;
+      openMarkdownOutput();
+      closeMarkdownInput();
+    };
+    ```
+    
+    Perfect for: Reading notes, presenting content, popup mode
+  </Tab>
+</Tabs>
+
+<Info>
+In popup mode (when opened from the extension icon), Docket defaults to Reader mode for quick note viewing.
+</Info>
+
+## Title Editing
+
+Every note has an editable title that:
+
+- Appears in the sidebar navigation
+- Defaults to "New Note" for new notes
+- Becomes the filename when downloading
+- Updates automatically as you type
+
+```typescript
+// index.ts:148-152
+const getHTMLNoteTitle = () => {
+  return (<HTMLInputElement>document.getElementById("noteTitle")).value || "unnamed";
+};
+```
+
+<Warning>
+Note titles are HTML decoded before saving to prevent encoding issues when displayed in the sidebar.
+</Warning>
+
+## Autosave Behavior
+
+Docket automatically saves your work as you type with intelligent debouncing:
+
+```typescript
+// index.ts:440-447
+const debounce = (lastExecuted: LastExecuted) => {
+  if (Date.now() - lastExecuted.msSinceLastInput > timeout) {
+    renderMarkdown();
+    saveActiveNote();
+    renderNoteList();
+  }
+};
+```
+
+### How Autosave Works
+
+1. **Immediate feedback** - Preview renders as you type
+2. **Debounced saving** - Waits for typing pause before saving
+3. **IndexedDB storage** - All changes persisted to browser database
+4. **Sidebar updates** - Note list refreshes to show updated titles
+
+<Tip>
+You never need to manually save - Docket handles it automatically. All notes are stored in your browser's IndexedDB.
+</Tip>
+
+## Supported Code Languages
+
+Docket includes syntax highlighting for 8 programming languages:
+
+- C
+- C++
+- Java
+- JavaScript
+- Python
+- Rust
+- TypeScript
+- Plaintext (fallback)
+
+```python
+# Example: Python code with syntax highlighting
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+```
+
+<Check>
+To use syntax highlighting, specify the language after the opening code fence: \`\`\`python
+</Check>

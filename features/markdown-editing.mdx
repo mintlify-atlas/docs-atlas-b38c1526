@@ -1,0 +1,196 @@
+---
+title: Markdown Editing
+description: Live markdown editing with syntax highlighting and GitHub Flavored Markdown support
+icon: pen
+---
+
+Docket provides a powerful markdown editing experience with live preview capabilities powered by marked.js and DOMPurify for safe HTML sanitization.
+
+## Live Preview
+
+All markdown content is rendered in real-time as you type. The editor uses a debounced rendering system to ensure smooth performance:
+
+```typescript
+const renderMarkdown = () => {
+  const markdownOutput = document.getElementById("markdownOutput");
+  const editorText = getHTMLEditorText();
+  markdownOutput.innerHTML = DOMPurify.sanitize(marked.parse(editorText));
+};
+```
+
+<Info>
+The live preview automatically updates as you type, with intelligent debouncing to prevent performance issues during rapid typing.
+</Info>
+
+## GitHub Flavored Markdown
+
+Docket fully supports GitHub Flavored Markdown (GFM) through the marked.js library configuration:
+
+```typescript
+const marked = new Marked({
+  gfm: true,
+});
+```
+
+### Supported GFM Features
+
+<CardGroup cols={2}>
+  <Card title="Tables" icon="table">
+    Create tables with pipe syntax
+  </Card>
+  <Card title="Task Lists" icon="list-check">
+    Interactive checkboxes with `- [ ]` syntax
+  </Card>
+  <Card title="Strikethrough" icon="strikethrough">
+    Use `~~text~~` for strikethrough
+  </Card>
+  <Card title="Autolinks" icon="link">
+    Automatic URL detection and linking
+  </Card>
+</CardGroup>
+
+## Footnotes
+
+Docket supports footnotes using the marked-footnote extension. Create footnotes like this:
+
+```markdown
+Here's a sentence with a footnote[^1].
+
+[^1]: This is the footnote content.
+```
+
+## Alerts
+
+Create styled alert boxes using the marked-alert extension:
+
+```markdown
+> [!NOTE]
+> Useful information that users should know
+
+> [!WARNING]
+> Critical content demanding immediate attention
+
+> [!TIP]
+> Helpful advice for doing things better
+```
+
+## Syntax Highlighting
+
+Code blocks feature automatic syntax highlighting powered by highlight.js with support for multiple languages:
+
+### Supported Languages
+
+<CodeGroup>
+```javascript JavaScript Example
+function hello() {
+  console.log("Hello, Docket!");
+}
+```
+
+```python Python Example
+def hello():
+    print("Hello, Docket!")
+```
+
+```rust Rust Example
+fn main() {
+    println!("Hello, Docket!");
+}
+```
+
+```typescript TypeScript Example
+const hello = (): void => {
+  console.log("Hello, Docket!");
+};
+```
+</CodeGroup>
+
+The following languages are supported:
+- C
+- C++
+- Java
+- JavaScript
+- Python
+- Rust
+- TypeScript
+- Plaintext
+
+### Implementation
+
+```typescript
+import hljs from "highlight.js/lib/core";
+import javascript from "highlight.js/lib/languages/javascript";
+import python from "highlight.js/lib/languages/python";
+import rust from "highlight.js/lib/languages/rust";
+import typescript from "highlight.js/lib/languages/typescript";
+
+hljs.registerLanguage("javascript", javascript);
+hljs.registerLanguage("python", python);
+hljs.registerLanguage("rust", rust);
+hljs.registerLanguage("typescript", typescript);
+```
+
+## Code Blocks
+
+Create code blocks using triple backticks with optional language tags:
+
+````markdown
+```javascript
+const greeting = "Hello, World!";
+console.log(greeting);
+```
+````
+
+<Tip>
+Always specify the language tag for proper syntax highlighting. If no language is specified, the code will be rendered as plaintext.
+</Tip>
+
+## Markdown Examples
+
+Here are some common markdown formatting options:
+
+### Headers
+
+```markdown
+# H1 Header
+## H2 Header
+### H3 Header
+```
+
+### Emphasis
+
+```markdown
+**bold text**
+*italic text*
+~~strikethrough~~
+`inline code`
+```
+
+### Lists
+
+```markdown
+- Unordered item 1
+- Unordered item 2
+  - Nested item
+
+1. Ordered item 1
+2. Ordered item 2
+```
+
+### Links and Images
+
+```markdown
+[Link text](https://example.com)
+![Alt text](image-url.jpg)
+```
+
+### Blockquotes
+
+```markdown
+> This is a blockquote
+> It can span multiple lines
+```
+
+<Note>
+All markdown content is sanitized using DOMPurify before rendering to prevent XSS attacks and ensure security.
+</Note>

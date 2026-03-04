@@ -1,0 +1,297 @@
+---
+title: Themes and Styling
+description: Customize Docket's appearance with dark mode, code themes, and view modes
+icon: palette
+---
+
+Docket offers extensive customization options for both the UI theme and code syntax highlighting, allowing you to personalize your editing environment.
+
+## Dark Mode
+
+Toggle between light and dark UI themes for comfortable editing in any lighting condition.
+
+### Toggle Dark Mode
+
+Dark mode can be toggled using the checkbox in the sidebar:
+
+```typescript
+const toggleDarkMode = () => {
+  const darkModeSlider = document.getElementById("darkModeSlider");
+  docketProps.settings.uiTheme = darkModeSlider.checked ? "dark" : "light";
+  setTheme(docketProps.settings.uiTheme);
+};
+```
+
+<Tip>
+Your theme preference is automatically saved to Chrome's local storage and persists across sessions.
+</Tip>
+
+### Theme Implementation
+
+The theme system uses data attributes to apply consistent styling across all UI elements:
+
+```typescript
+const setTheme = (theme: string) => {
+  chrome.storage.local.set(docketProps.settings);
+  const themedElements = document.querySelectorAll("[data-theme]");
+  themedElements.forEach((element) => {
+    element.setAttribute("data-theme", theme);
+  });
+};
+```
+
+<CardGroup cols={2}>
+  <Card title="Light Mode" icon="sun">
+    Clean, bright interface perfect for daytime editing
+  </Card>
+  <Card title="Dark Mode" icon="moon">
+    Easy on the eyes for low-light environments and night work
+  </Card>
+</CardGroup>
+
+## Code Highlighting Themes
+
+Customize the appearance of code blocks with different syntax highlighting themes.
+
+### Available Themes
+
+Docket includes multiple code highlighting themes located in `dist/code_themes/`:
+
+<CodeGroup>
+```css GitHub Light Theme
+/* dist/code_themes/github.css */
+/* Clean, professional light theme matching GitHub's style */
+```
+
+```css GitHub Dark Theme  
+/* dist/code_themes/github-dark.css */
+/* Dark theme optimized for code readability */
+```
+</CodeGroup>
+
+### Changing Code Style
+
+Select your preferred code theme from the dropdown in the settings:
+
+```typescript
+const updateCodeStyle = () => {
+  // Clear old stylesheet if exists
+  const oldStyleSheet = document.getElementById("codeStylesheet");
+  if (oldStyleSheet) {
+    oldStyleSheet.parentNode?.removeChild(oldStyleSheet);
+  }
+
+  // Set new stylesheet
+  docketProps.settings.codeStyle = document.getElementById("codeStyleDropdown").value;
+  chrome.storage.local.set(docketProps.settings);
+  
+  const codeStylesheetElement = document.createElement("link");
+  codeStylesheetElement.rel = "stylesheet";
+  codeStylesheetElement.href = `code_themes/${docketProps.settings.codeStyle}.css`;
+  codeStylesheetElement.id = "codeStylesheet";
+  document.head.appendChild(codeStylesheetElement);
+};
+```
+
+<Info>
+Code themes are dynamically loaded as CSS stylesheets and can be changed without reloading the page.
+</Info>
+
+### Default Settings
+
+The default theme configuration is loaded from Chrome storage on initialization:
+
+```typescript
+chrome.storage.local.get(null, (result) => {
+  docketProps.settings.codeStyle = result.codeStyle || "github";
+  const codeStyleDropdown = document.getElementById("codeStyleDropdown");
+  codeStyleDropdown.value = docketProps.settings.codeStyle;
+  updateCodeStyle();
+
+  docketProps.settings.uiTheme = result.uiTheme || "light";
+  const darkModeSlider = document.getElementById("darkModeSlider");
+  darkModeSlider.checked = result.uiTheme === "dark";
+  toggleDarkMode();
+});
+```
+
+## View Modes
+
+Docket offers three distinct view modes to match your workflow:
+
+### Editor Mode
+
+<Accordion title="Editor Mode - Left Pane">
+  Focus exclusively on writing markdown without preview distraction.
+  
+  ```typescript
+  const editorMode = () => {
+    docketProps.tempProps.viewMode = "editor";
+    leftPaneRadio.checked = true;
+    closeMarkdownOutput();
+    openMarkdownInput();
+  };
+  ```
+  
+  <Card icon="code">
+    **Best for:** Distraction-free writing, drafting content, editing raw markdown
+  </Card>
+</Accordion>
+
+### Center Mode
+
+<Accordion title="Center Mode - Split View">
+  See both your markdown source and live preview side-by-side.
+  
+  ```typescript
+  const centerMode = () => {
+    docketProps.tempProps.viewMode = "center";
+    centerPaneRadio.checked = true;
+    openMarkdownInput();
+    openMarkdownOutput();
+  };
+  ```
+  
+  <Card icon="columns">
+    **Best for:** Active editing with immediate visual feedback, learning markdown syntax
+  </Card>
+</Accordion>
+
+### Reader Mode
+
+<Accordion title="Reader Mode - Right Pane">
+  Focus on the rendered output with a clean reading experience.
+  
+  ```typescript
+  const readerMode = () => {
+    docketProps.tempProps.viewMode = "reader";
+    rightPaneRadio.checked = true;
+    openMarkdownOutput();
+    closeMarkdownInput();
+  };
+  ```
+  
+  <Card icon="book">
+    **Best for:** Reviewing formatted content, presenting notes, reading without distractions
+  </Card>
+</Accordion>
+
+### View Mode Panel Controls
+
+```typescript
+const leftPaneRadio = document.getElementById("leftPane");
+const centerPaneRadio = document.getElementById("centerPane");
+const rightPaneRadio = document.getElementById("rightPane");
+
+leftPaneRadio.addEventListener("change", () => {
+  if (leftPaneRadio.checked) editorMode();
+});
+
+centerPaneRadio.addEventListener("change", () => {
+  if (centerPaneRadio.checked) centerMode();
+});
+
+rightPaneRadio.addEventListener("change", () => {
+  if (rightPaneRadio.checked) readerMode();
+});
+```
+
+<Steps>
+  <Step title="Select view mode">
+    Click one of the three radio buttons to switch between modes
+  </Step>
+  <Step title="Layout updates">
+    The editor and preview panels show/hide based on the selected mode
+  </Step>
+  <Step title="Preference saved">
+    Your view mode preference is remembered in the session
+  </Step>
+</Steps>
+
+## Settings Structure
+
+All customization settings are stored in the global `docketProps` object:
+
+```typescript
+let docketProps = {
+  settings: {
+    uiTheme: "light",      // "light" or "dark"
+    codeStyle: "github",   // code highlighting theme name
+  },
+  tempProps: {
+    draggedNote: null,
+    viewMode: "center",    // "editor" | "center" | "reader"
+    popupMode: false,
+  },
+  // ... other properties
+};
+```
+
+<Note>
+`settings` are persisted to Chrome local storage, while `tempProps` are session-only and reset when the app reloads.
+</Note>
+
+## Popup Mode
+
+When opened as a popup, Docket automatically switches to reader mode:
+
+```typescript
+docketProps.tempProps.popupMode = window.location.search.includes("popup=true");
+if (docketProps.tempProps.popupMode) {
+  document.getElementById("docketBody")?.classList.add("popup");
+  readerMode();
+}
+```
+
+<Info>
+Popup mode provides a compact, read-focused experience ideal for quick reference to your notes.
+</Info>
+
+## Persistence
+
+All theme and styling preferences are automatically saved:
+
+<CardGroup cols={2}>
+  <Card title="Chrome Storage" icon="database">
+    UI theme and code style preferences persist across browser sessions
+  </Card>
+  <Card title="Session State" icon="clock">
+    View mode and temporary preferences reset on page reload
+  </Card>
+</CardGroup>
+
+## Customization Events
+
+All customization controls have event listeners for immediate updates:
+
+```typescript
+// Dark mode toggle
+const darkModeSlider = document.getElementById("darkModeSlider");
+darkModeSlider.addEventListener("change", toggleDarkMode);
+
+// Code style dropdown
+const codeStyleDropdown = document.getElementById("codeStyleDropdown");
+codeStyleDropdown.addEventListener("change", updateCodeStyle);
+```
+
+<Tip>
+Changes to theme settings take effect immediately without requiring a page reload.
+</Tip>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Matching Themes">
+    Consider matching your UI theme with your code highlighting theme for visual consistency. For example, use dark UI theme with `github-dark` code theme.
+  </Accordion>
+  
+  <Accordion title="View Mode Workflow">
+    - Use **editor mode** when drafting new content
+    - Switch to **center mode** when actively editing and formatting
+    - Use **reader mode** for final review or when sharing your screen
+  </Accordion>
+  
+  <Accordion title="Performance">
+    Code theme changes dynamically load CSS files. For best performance, choose your preferred theme once and stick with it during an editing session.
+  </Accordion>
+</AccordionGroup>

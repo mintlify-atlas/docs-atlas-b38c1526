@@ -1,0 +1,429 @@
+---
+title: Customization Options
+description: Personalize Docket with dark mode, code themes, view preferences, and sidebar settings
+---
+
+## Dark Mode Settings
+
+Docket supports light and dark themes that apply to the entire interface:
+
+```typescript
+// index.ts:577-582
+const toggleDarkMode = () => {
+  const darkModeSlider = <HTMLInputElement>document.getElementById("darkModeSlider");
+  docketProps.settings.uiTheme = darkModeSlider.checked ? "dark" : "light";
+  setTheme(docketProps.settings.uiTheme);
+};
+```
+
+### How Dark Mode Works
+
+<Steps>
+  <Step title="Toggle the switch">
+    Click the dark mode toggle in the settings. The switch is a checkbox input styled as a slider.
+  </Step>
+  
+  <Step title="Theme propagates">
+    The `setTheme` function updates all elements with the `data-theme` attribute:
+    
+    ```typescript
+    // index.ts:566-572
+    const setTheme = (theme: string) => {
+      chrome.storage.local.set(docketProps.settings);
+      const themedElements = document.querySelectorAll("[data-theme]");
+      themedElements.forEach((element) => {
+        element.setAttribute("data-theme", theme);
+      });
+    };
+    ```
+  </Step>
+  
+  <Step title="Settings persist">
+    Your theme choice saves to `chrome.storage.local` and restores on next launch.
+  </Step>
+</Steps>
+
+<Info>
+Dark mode affects both the UI elements (sidebar, toolbar, editor background) and the markdown preview styling.
+</Info>
+
+### Theme Persistence
+
+Docket loads your saved theme preference on startup:
+
+```typescript
+// index.ts:691-701
+chrome.storage.local.get(null, (result) => {
+  docketProps.settings.uiTheme = result.uiTheme || "light";
+  const darkModeSlider = <HTMLInputElement>document.getElementById("darkModeSlider");
+  darkModeSlider.checked = result.uiTheme === "dark";
+  toggleDarkMode();
+});
+```
+
+<Tip>
+If no theme is saved, Docket defaults to light mode. The theme applies immediately on page load before you see any flash of unstyled content.
+</Tip>
+
+## Code Highlighting Theme Selection
+
+Customize syntax highlighting with 8+ different highlight.js themes:
+
+```typescript
+// index.ts:587-602
+const updateCodeStyle = () => {
+  // Clear old stylesheet if exists
+  const oldStyleSheet = document.getElementById("codeStylesheet");
+  if (oldStyleSheet) {
+    oldStyleSheet.parentNode?.removeChild(oldStyleSheet);
+  }
+
+  // Set new stylesheet
+  docketProps.settings.codeStyle = (<HTMLSelectElement>document.getElementById("codeStyleDropdown")).value;
+  chrome.storage.local.set(docketProps.settings);
+  const codeStylesheetElement = document.createElement("link");
+  codeStylesheetElement.rel = "stylesheet";
+  codeStylesheetElement.href = `code_themes/${docketProps.settings.codeStyle}.css`;
+  codeStylesheetElement.id = "codeStylesheet";
+  document.head.appendChild(codeStylesheetElement);
+};
+```
+
+### Available Code Themes
+
+Docket loads highlight.js CSS files dynamically from the `code_themes/` directory:
+
+<CardGroup cols={3}>
+  <Card title="GitHub" icon="code">
+    Default theme with clean, readable colors matching GitHub's style.
+  </Card>
+  <Card title="Monokai" icon="palette">
+    Popular dark theme with vibrant colors from Sublime Text.
+  </Card>
+  <Card title="Dracula" icon="moon">
+    Dark theme with purple and pink accents, easy on the eyes.
+  </Card>
+  <Card title="Atom One Dark" icon="atom">
+    Modern dark theme from the Atom editor.
+  </Card>
+  <Card title="Tomorrow Night" icon="circle-half-stroke">
+    Subtle dark theme with muted colors.
+  </Card>
+  <Card title="Solarized Light" icon="sun">
+    Light theme with warm, balanced colors.
+  </Card>
+  <Card title="Nord" icon="snowflake">
+    Arctic-inspired dark theme with cool blues.
+  </Card>
+  <Card title="And more..." icon="ellipsis">
+    Additional themes available in the dropdown.
+  </Card>
+</CardGroup>
+
+### Supported Languages
+
+Syntax highlighting works for these languages:
+
+```typescript
+// index.ts:11-28
+import c from "highlight.js/lib/languages/c";
+import cpp from "highlight.js/lib/languages/cpp";
+import java from "highlight.js/lib/languages/java";
+import javascript from "highlight.js/lib/languages/javascript";
+import plaintext from "highlight.js/lib/languages/plaintext";
+import python from "highlight.js/lib/languages/python";
+import rust from "highlight.js/lib/languages/rust";
+import typescript from "highlight.js/lib/languages/typescript";
+
+hljs.registerLanguage("c", c);
+hljs.registerLanguage("cpp", cpp);
+hljs.registerLanguage("java", java);
+hljs.registerLanguage("javascript", javascript);
+hljs.registerLanguage("python", python);
+hljs.registerLanguage("plaintext", plaintext);
+hljs.registerLanguage("rust", rust);
+hljs.registerLanguage("typescript", typescript);
+```
+
+<Note>
+Only 8 languages are bundled to keep the extension size small. Unrecognized languages fall back to plaintext.
+</Note>
+
+## View Mode Preferences
+
+Choose between three view modes to optimize your workflow:
+
+<Tabs>
+  <Tab title="Editor Mode">
+    **Maximize writing space**
+    
+    - Editor takes full width
+    - Preview pane hidden
+    - Best for: Drafting, focused writing
+    
+    ```typescript
+    // index.ts:630-635
+    const editorMode = () => {
+      docketProps.tempProps.viewMode = "editor";
+      leftPaneRadio.checked = true;
+      closeMarkdownOutput();
+      openMarkdownInput();
+    };
+    ```
+  </Tab>
+  
+  <Tab title="Center Mode" default>
+    **Split-pane view**
+    
+    - Editor and preview side-by-side
+    - Live rendering visible while typing
+    - Best for: Documentation, formatted content
+    
+    ```typescript
+    // index.ts:637-642
+    const centerMode = () => {
+      docketProps.tempProps.viewMode = "center";
+      centerPaneRadio.checked = true;
+      openMarkdownInput();
+      openMarkdownOutput();
+    };
+    ```
+  </Tab>
+  
+  <Tab title="Reader Mode">
+    **Preview only**
+    
+    - Editor hidden
+    - Full-width rendered markdown
+    - Best for: Reading, presenting
+    
+    ```typescript
+    // index.ts:644-649
+    const readerMode = () => {
+      docketProps.tempProps.viewMode = "reader";
+      rightPaneRadio.checked = true;
+      openMarkdownOutput();
+      closeMarkdownInput();
+    };
+    ```
+  </Tab>
+</Tabs>
+
+### View Mode Controls
+
+Switch modes using radio buttons in the toolbar:
+
+```typescript
+// index.ts:738-756
+const leftPaneRadio = <HTMLInputElement>document.getElementById("leftPane");
+const centerPaneRadio = <HTMLInputElement>document.getElementById("centerPane");
+const rightPaneRadio = <HTMLInputElement>document.getElementById("rightPane");
+
+leftPaneRadio.addEventListener("change", () => {
+  if (leftPaneRadio.checked) {
+    editorMode();
+  }
+});
+
+centerPaneRadio.addEventListener("change", () => {
+  if (centerPaneRadio.checked) {
+    centerMode();
+  }
+});
+
+rightPaneRadio.addEventListener("change", () => {
+  if (rightPaneRadio.checked) {
+    readerMode();
+  }
+});
+```
+
+<Warning>
+View mode preference is **not persistent** - it resets to center mode (or reader mode in popup) on each launch. This is stored in `tempProps` rather than settings.
+</Warning>
+
+## Sidebar Visibility
+
+Control sidebar display with multiple methods:
+
+### Toggle Methods
+
+<AccordionGroup>
+  <Accordion title="Keyboard Shortcut">
+    Press **Ctrl+H** to toggle sidebar visibility:
+    
+    ```typescript
+    // index.ts:720-725
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "h" && e.ctrlKey) {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    });
+    ```
+  </Accordion>
+  
+  <Accordion title="Toggle Buttons">
+    Two buttons control the sidebar:
+    
+    - **Main toggle** (top toolbar)
+    - **Inset toggle** (inside sidebar header)
+    
+    ```typescript
+    // index.ts:715-718
+    const sidebarToggleButton = <HTMLButtonElement>document.getElementById("sidebarToggleButton");
+    sidebarToggleButton.addEventListener("click", toggleSidebar);
+    const insetSidebarToggleButton = <HTMLButtonElement>document.getElementById("sidebarToggleButtonInset");
+    insetSidebarToggleButton.addEventListener("click", toggleSidebar);
+    ```
+  </Accordion>
+  
+  <Accordion title="Responsive Behavior">
+    Sidebar auto-hides on mobile (less than 768px width):
+    
+    ```typescript
+    // index.ts:673-680
+    const sidebarMediaQuery = window.matchMedia("(width > 48rem)");
+    sidebarMediaQuery.addEventListener("change", (e) => {
+      if (e.matches) {
+        openSidebar();
+      } else {
+        closeSidebar();
+      }
+    });
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Sidebar State Logic
+
+```typescript
+// index.ts:663-670
+const toggleSidebar = () => {
+  const sidebar = <HTMLElement>document.getElementById("sidebar");
+  if ((!sidebar.style.display && window.innerWidth < 768) || sidebar.style.display === "none") {
+    openSidebar();  // Show sidebar
+  } else {
+    closeSidebar(); // Hide sidebar
+  }
+};
+```
+
+<Info>
+On mobile devices, the sidebar checks window width before toggling. If screen width < 768px and no explicit display style is set, it defaults to hidden.
+</Info>
+
+## Popup Mode vs New Tab Mode
+
+Docket behaves differently depending on how it's opened:
+
+<CardGroup cols={2}>
+  <Card title="Popup Mode" icon="window-restore">
+    **Activated when:** Clicking the extension icon
+    
+    **Behavior:**
+    - Opens in small popup window
+    - Defaults to **Reader mode**
+    - Adds `.popup` class to body
+    - Optimized for quick viewing
+    
+    ```typescript
+    // index.ts:704-709
+    docketProps.tempProps.popupMode = window.location.search.includes("popup=true");
+    if (docketProps.tempProps.popupMode) {
+      document.getElementById("docketBody")?.classList.add("popup");
+      readerMode();
+    }
+    ```
+  </Card>
+  
+  <Card title="New Tab Mode" icon="window-maximize">
+    **Activated when:** Opening extension in full tab
+    
+    **Behavior:**
+    - Opens in full browser tab
+    - Defaults to **Center mode**
+    - Full editing capabilities
+    - More screen real estate
+  </Card>
+</CardGroup>
+
+### Detecting Popup Mode
+
+Docket checks the URL query parameter:
+
+```typescript
+// URL examples:
+// Popup mode:  chrome-extension://abc123/index.html?popup=true
+// Tab mode:    chrome-extension://abc123/index.html
+
+docketProps.tempProps.popupMode = window.location.search.includes("popup=true");
+```
+
+<Tip>
+To force tab behavior when testing, manually remove `?popup=true` from the URL. To force popup behavior, add it.
+</Tip>
+
+## Settings Persistence
+
+Docket stores customization preferences in Chrome's local storage:
+
+```typescript
+// Settings structure
+docketProps.settings = {
+  uiTheme: "light" | "dark",      // Dark mode setting
+  codeStyle: "github" | "monokai" | ...,  // Code highlight theme
+};
+
+// Persisted to chrome.storage.local
+chrome.storage.local.set(docketProps.settings);
+```
+
+### What Persists vs What Doesn't
+
+| Setting | Persists? | Storage Location |
+|---------|-----------|------------------|
+| Dark mode | ✅ Yes | `chrome.storage.local` |
+| Code theme | ✅ Yes | `chrome.storage.local` |
+| View mode | ❌ No | `tempProps` (session only) |
+| Sidebar visibility | ❌ No | `tempProps` (session only) |
+| Active note | ✅ Yes | `chrome.storage.local` |
+| Note content | ✅ Yes | IndexedDB |
+
+<Note>
+View mode and sidebar visibility reset on each launch to provide a consistent starting state. These are considered temporary UI preferences.
+</Note>
+
+## Resync on Focus
+
+Docket automatically reloads settings and notes when you switch tabs:
+
+```typescript
+// index.ts:776-785
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    initializeDocket();
+  }
+});
+
+window.addEventListener("focus", initializeDocket);
+```
+
+<Check>
+This ensures your settings and notes stay synchronized if you have multiple Docket tabs open or make changes in popup mode.
+</Check>
+
+## Future Customization Features
+
+Potential enhancements to consider:
+
+- Custom CSS themes
+- Font family and size preferences
+- Custom keyboard shortcuts
+- Configurable autosave delay
+- More code highlighting themes
+- Export/import settings
+
+<Tip>
+Interested in adding new customization options? Docket is open source - contributions welcome!
+</Tip>

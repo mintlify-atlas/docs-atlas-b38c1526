@@ -1,0 +1,305 @@
+---
+title: Architecture
+description: System architecture and design of Docket
+---
+
+Docket is a Chrome extension built with Manifest V3 that provides a markdown note-taking experience directly in your browser's new tab or popup.
+
+## Chrome Extension Structure
+
+Docket uses **Manifest V3**, the latest Chrome extension platform:
+
+```json manifest.json
+{
+  "manifest_version": 3,
+  "name": "docket",
+  "description": "markdown editor tab",
+  "chrome_url_overrides": {
+    "newtab": "dist/index.html"
+  },
+  "action": {
+    "default_icon": "icons/docket.png",
+    "default_popup": "dist/index.html?popup=true"
+  },
+  "permissions": ["storage", "identity"]
+}
+```
+
+The extension can be accessed in two ways:
+- **New Tab Override**: Replaces the default new tab page
+- **Popup Mode**: Available via the extension icon toolbar
+
+## Storage Architecture
+
+### IndexedDB
+
+Docket uses **IndexedDB** for persistent local storage of notes. The database structure:
+
+<ParamField path="docketDB" type="IDBDatabase">
+  Main database containing two object stores:
+  
+  - `notes`: Stores `UserNote` objects with `uuid` as the keyPath
+  - `noteOrder`: Stores serialized note ordering as a single entry
+</ParamField>
+
+Initialization occurs on load:
+
+```typescript src/index.ts:119-138
+const initDbConnection = async () => {
+  const request = indexedDB.open("docketDB", 1);
+  request.onupgradeneeded = (event) => {
+    const db = (event.target as IDBOpenDBRequest).result;
+    if (!db.objectStoreNames.contains("notes")) {
+      db.createObjectStore("notes", { keyPath: "uuid" });
+      db.createObjectStore("noteOrder", { keyPath: "index" });
+    }
+    docketProps.dbConnection = db;
+  };
+  request.onsuccess = (event) => {
+    docketProps.dbConnection = request.result;
+    loadIndexedDbNoteOrder(docketProps.dbConnection);
+    loadIndexedDbNotes(docketProps.dbConnection);
+  };
+};
+```
+
+### Chrome Storage API
+
+Docket also uses `chrome.storage.local` for:
+- Active note UUID tracking
+- User settings (theme, code style)
+
+## Component Structure
+
+Docket's UI is divided into three main components:
+
+### 1. Sidebar
+
+The sidebar displays the list of notes and provides navigation:
+- Note list with drag-and-drop reordering
+- New note button
+- Settings (theme toggle, code style selector)
+- Toggleable via `Ctrl+H` or hamburger menu
+
+### 2. Editor
+
+The markdown editor (`#markdownInput`) where users write:
+- Plain textarea with markdown formatting
+- Keyboard shortcuts (Ctrl+B for bold, Ctrl+I for italic)
+- Custom tab behavior for indentation
+- Auto-save on input with debouncing
+
+### 3. Preview Panel
+
+The preview panel (`#markdownOutput`) renders formatted markdown:
+- Live rendering as you type
+- Syntax highlighting for code blocks
+- Sanitized HTML output
+
+### View Modes
+
+Users can switch between three view modes:
+
+<ResponseField name="editor" type="mode">
+  Shows only the editor panel
+</ResponseField>
+
+<ResponseField name="center" type="mode">
+  Shows both editor and preview side-by-side (default)
+</ResponseField>
+
+<ResponseField name="reader" type="mode">
+  Shows only the preview panel
+</ResponseField>
+
+## State Management
+
+### docketProps Object
+
+Docket's global state is managed through the `docketProps` object:
+
+```typescript src/index.ts:48-67
+let docketProps = {
+  settings: {
+    uiTheme: "light",
+    codeStyle: "github",
+  },
+  tempProps: {
+    draggedNote: null as HTMLLIElement | null,
+    viewMode: "center" as "editor" | "center" | "reader",
+    popupMode: false,
+  },
+  activeNoteUUID: "",
+  noteStore: {
+    noteMap: new Map<string, UserNote>(),
+    indexToUUID: new Map<number, string>(),
+    UUIDToIndex: new Map<string, number>(),
+    deletedNotes: new Set<string>(),
+  } as NoteStore,
+  dbConnection: undefined as IDBDatabase | undefined,
+};
+```
+
+### Note Store Architecture
+
+The `noteStore` uses three data structures for efficient note management:
+
+<ParamField path="noteMap" type="Map<string, UserNote>">
+  Primary storage mapping UUIDs to note objects
+</ParamField>
+
+<ParamField path="indexToUUID" type="Map<number, string>">
+  Maps display order indices to note UUIDs for ordered rendering
+</ParamField>
+
+<ParamField path="UUIDToIndex" type="Map<string, number>">
+  Reverse mapping from UUIDs to indices for quick lookups
+</ParamField>
+
+<ParamField path="deletedNotes" type="Set<string>">
+  Tracks deleted note UUIDs for future sync functionality
+</ParamField>
+
+This triple-map architecture enables:
+- O(1) note lookup by UUID
+- O(1) note lookup by display position
+- Efficient reordering via drag-and-drop
+- Persistent ordering stored in IndexedDB
+
+## Markdown Rendering Pipeline
+
+Docket processes markdown through a multi-stage pipeline:
+
+### 1. Marked.js Parser
+
+```typescript src/index.ts:31-44
+const marked = new Marked(
+  { gfm: true },
+  markedHighlight({
+    langPrefix: "hljs language-",
+    highlight(code, lang, info) {
+      const language = hljs.getLanguage(lang) ? lang : "plaintext";
+      return hljs.highlight(code, { language }).value;
+    },
+  }),
+  markedFootnote(),
+  markedAlert()
+);
+```
+
+Features enabled:
+- GitHub Flavored Markdown (GFM)
+- Syntax highlighting via highlight.js
+- Footnotes support
+- Alert/callout blocks
+
+### 2. Syntax Highlighting
+
+Supported languages (to minimize bundle size):
+- C, C++, Java
+- JavaScript, TypeScript
+- Python, Rust
+- Plaintext fallback
+
+### 3. DOMPurify Sanitization
+
+```typescript src/index.ts:270-279
+const renderMarkdown = () => {
+  const markdownOutput = <HTMLElement>document.getElementById("markdownOutput");
+  if (markdownOutput.style.display === "none") {
+    return;
+  }
+
+  const editorText = getHTMLEditorText();
+  markdownOutput.innerHTML = DOMPurify.sanitize(marked.parse(editorText) as keyof typeof String);
+};
+```
+
+DOMPurify prevents XSS attacks by sanitizing HTML before rendering.
+
+## Event Handling System
+
+### Input Debouncing
+
+Docket implements efficient auto-save with debouncing:
+
+```typescript src/index.ts:439-447
+const debounce = (lastExecuted: LastExecuted) => {
+  if (Date.now() - lastExecuted.msSinceLastInput > timeout) {
+    renderMarkdown();
+    saveActiveNote();
+    renderNoteList();
+  }
+};
+```
+
+On each input event:
+1. Update last input timestamp
+2. Schedule debounced save
+3. Render if throttle interval elapsed
+
+### Drag-and-Drop Reordering
+
+Notes can be reordered via drag-and-drop in the sidebar:
+
+```typescript src/index.ts:328-381
+noteElement.addEventListener("dragstart", (e) => {
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", note.uuid);
+  docketProps.tempProps.draggedNote = <HTMLLIElement>e.target;
+});
+
+noteElement.addEventListener("drop", (e) => {
+  const draggedUUID = e.dataTransfer.getData("text/plain");
+  const targetUUID = (<HTMLLIElement>e.target).id;
+  const targetIndex = docketProps.noteStore.UUIDToIndex.get(targetUUID)!;
+  moveNoteToIndex(draggedUUID, targetIndex!);
+});
+```
+
+The `moveNoteToIndex()` function updates all affected indices to maintain ordering.
+
+### Keyboard Shortcuts
+
+<ResponseField name="Ctrl+B" type="shortcut">
+  Bold selected text with `**`
+</ResponseField>
+
+<ResponseField name="Ctrl+I" type="shortcut">
+  Italicize selected text with `*`
+</ResponseField>
+
+<ResponseField name="Ctrl+L" type="shortcut">
+  Insert markdown link syntax
+</ResponseField>
+
+<ResponseField name="Ctrl+H" type="shortcut">
+  Toggle sidebar visibility
+</ResponseField>
+
+## Sync and Persistence
+
+### Auto-resync on Focus
+
+Docket automatically reloads notes when:
+- Window gains focus
+- Tab becomes visible
+
+This prevents data loss when multiple instances are open:
+
+```typescript src/index.ts:776-785
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    initializeDocket();
+  }
+});
+
+window.addEventListener("focus", initializeDocket);
+```
+
+### Future: Cross-Device Sync
+
+The codebase includes infrastructure for future cross-device syncing:
+- `lastSynced` property on `UserNote` interface
+- `deletedNotes` set for tracking deletions
+- OAuth2 permissions in manifest for authentication

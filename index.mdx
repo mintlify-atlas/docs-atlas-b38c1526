@@ -1,97 +1,155 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: Docket Documentation
+description: A Chrome extension for locally saved markdown notes in new tabs or popups
+mode: custom
 ---
 
-## Setting up
+<div className="relative min-h-[600px] flex items-center justify-center py-20 px-4 overflow-hidden dark:bg-gradient-to-b dark:from-[#0f1117] dark:via-[#1a1d27] dark:to-[#0f1117] bg-gradient-to-b from-white via-gray-50 to-white">
+  <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+  
+  <div className="relative z-10 max-w-6xl mx-auto text-center">
+    <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 dark:text-gray-100 text-gray-900">
+      Your Markdown Notes,<br />Always Within Reach
+    </h1>
+    
+    <p className="text-lg sm:text-xl max-w-2xl mx-auto mb-10 dark:text-gray-400 text-gray-600">
+      Docket transforms your browser's new tab into a powerful markdown editor with live preview, syntax highlighting, and seamless local storage.
+    </p>
+    
+    <div className="flex flex-wrap items-center justify-center gap-4">
+      <a 
+        href="/installation" 
+        className="inline-flex items-center px-8 py-3.5 rounded-lg font-semibold transition-all bg-[#040404] text-white hover:bg-[#1a1a1a] dark:bg-white dark:text-[#040404] dark:hover:bg-gray-100 no-underline"
+      >
+        Get Started
+        <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+      </a>
+      <a 
+        href="/quickstart" 
+        className="inline-flex items-center px-8 py-3.5 rounded-lg font-semibold transition-all border dark:border-white/30 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 border-gray-300 bg-white text-gray-900 hover:bg-gray-50 no-underline"
+      >
+        View Quickstart
+      </a>
+    </div>
+  </div>
+</div>
 
-Get your documentation site up and running in minutes.
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="text-center mb-12">
+    <h2 className="text-3xl font-bold mb-4 dark:text-white text-gray-900">
+      Everything You Need for Note-Taking
+    </h2>
+    <p className="text-lg dark:text-gray-400 text-gray-600 max-w-2xl mx-auto">
+      Docket combines a powerful markdown editor with essential features to keep your notes organized and accessible.
+    </p>
+  </div>
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+  <CardGroup cols={3}>
+    <Card title="Live Preview" icon="eye" href="/features/markdown-editing">
+      Write markdown on the left, see beautifully rendered output on the right — instantly.
+    </Card>
+    <Card title="Syntax Highlighting" icon="code" href="/features/markdown-editing">
+      Code blocks come alive with highlight.js support for 8+ languages.
+    </Card>
+    <Card title="Local Storage" icon="database" href="/features/note-management">
+      Your notes stay private and secure, stored locally with IndexedDB.
+    </Card>
+    <Card title="Dark Mode" icon="moon" href="/features/themes-and-styling">
+      Toggle between light and dark themes with custom code highlighting styles.
+    </Card>
+    <Card title="Drag & Drop" icon="arrows-up-down-left-right" href="/guides/organizing-notes">
+      Reorder notes effortlessly by dragging them in the sidebar.
+    </Card>
+    <Card title="Keyboard Shortcuts" icon="keyboard" href="/features/keyboard-shortcuts">
+      Format text faster with shortcuts for bold, italic, links, and more.
+    </Card>
+  </CardGroup>
+</div>
 
-## Make it yours
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="text-center mb-12">
+    <h2 className="text-3xl font-bold mb-4 dark:text-white text-gray-900">
+      Quick Start
+    </h2>
+    <p className="text-lg dark:text-gray-400 text-gray-600 max-w-2xl mx-auto">
+      Get up and running with Docket in minutes.
+    </p>
+  </div>
 
-Design a docs site that looks great and empowers your users.
+  <Steps>
+    <Step title="Install the Extension">
+      Download Docket from the [Chrome Web Store](http://awwscar.ca/docket/) or install it manually by loading the unpacked extension from the repository.
+      
+      <Note>
+        Uninstalling and reinstalling will erase saved notes — back them up first!
+      </Note>
+    </Step>
+    
+    <Step title="Open a New Tab">
+      Once installed, open a new tab in Chrome. Docket automatically replaces your default new tab page with a clean markdown editor.
+      
+      You can also click the Docket icon in your toolbar to open it as a popup.
+    </Step>
+    
+    <Step title="Start Writing">
+      Create your first note by clicking the **New Note** button. Write markdown in the editor pane, and watch it render live in the preview pane.
+      
+      ```markdown
+      # Welcome to Docket
+      
+      - Create notes with **markdown**
+      - Use `code blocks` for syntax highlighting
+      - Organize notes by dragging them in the sidebar
+      ```
+    </Step>
+    
+    <Step title="Customize Your Experience">
+      Toggle dark mode, choose a code highlighting theme, and switch between editor, split, or reader view modes using the toolbar.
+    </Step>
+  </Steps>
+</div>
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="text-center mb-12">
+    <h2 className="text-3xl font-bold mb-4 dark:text-white text-gray-900">
+      Explore by Topic
+    </h2>
+  </div>
 
-## Create beautiful pages
+  <CardGroup cols={2}>
+    <Card title="Features" icon="sparkles" href="/features/markdown-editing">
+      Dive deep into Docket's markdown editing, note management, keyboard shortcuts, and theming capabilities.
+    </Card>
+    <Card title="Guides" icon="book-open" href="/guides/using-editor">
+      Learn how to use the editor, organize notes, import and export files, and customize settings.
+    </Card>
+    <Card title="Development" icon="code-branch" href="/development/architecture">
+      Explore the architecture, learn how to build from source, and review the API reference.
+    </Card>
+    <Card title="Contributing" icon="users" href="/development/contributing">
+      Join the community and contribute to Docket's development.
+    </Card>
+  </CardGroup>
+</div>
 
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<div className="mt-20 mb-16 max-w-5xl mx-auto px-6">
+  <div className="dark:bg-[#1a1d27] bg-gray-50 dark:border-[#27272a] border-gray-200 border rounded-2xl p-10 text-center">
+    <h2 className="text-3xl font-bold mb-4 dark:text-white text-gray-900">
+      Ready to Get Started?
+    </h2>
+    <p className="text-lg dark:text-gray-400 text-gray-600 max-w-xl mx-auto mb-8">
+      Install Docket today and transform your browser into a powerful note-taking workspace.
+    </p>
+    <a 
+      href="/installation" 
+      className="inline-flex items-center px-8 py-3.5 rounded-lg font-semibold transition-all bg-[#040404] text-white hover:bg-[#1a1a1a] dark:bg-white dark:text-[#040404] dark:hover:bg-gray-100 no-underline"
+    >
+      Install Now
+      <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+      </svg>
+    </a>
+  </div>
+</div>

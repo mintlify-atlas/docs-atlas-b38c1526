@@ -1,0 +1,307 @@
+---
+title: Keyboard Shortcuts
+description: Boost your productivity with keyboard shortcuts for formatting and navigation
+icon: keyboard
+---
+
+Docket includes powerful keyboard shortcuts to speed up your markdown editing workflow. All shortcuts are implemented directly in the editor with instant feedback.
+
+## Formatting Shortcuts
+
+Accelerate your markdown formatting with these keyboard shortcuts:
+
+### Bold Text
+
+<Accordion title="Ctrl + B">
+  Wrap selected text in bold formatting (`**text**`)
+  
+  ```typescript
+  // Implementation: index.ts:818-827
+  if (e.key === "b" && e.ctrlKey) {
+    if (markdownInput.selectionStart !== markdownInput.selectionEnd) {
+      e.preventDefault();
+      markdownInput.setRangeText(
+        "**" + markdownInput.value.substring(
+          markdownInput.selectionStart, 
+          markdownInput.selectionEnd
+        ) + "**",
+        markdownInput.selectionStart,
+        markdownInput.selectionEnd,
+        "select"
+      );
+    }
+  }
+  ```
+</Accordion>
+
+### Italic Text
+
+<Accordion title="Ctrl + I">
+  Wrap selected text in italic formatting (`*text*`)
+  
+  ```typescript
+  // Implementation: index.ts:829-838
+  if (e.key === "i" && e.ctrlKey) {
+    if (markdownInput.selectionStart !== markdownInput.selectionEnd) {
+      e.preventDefault();
+      markdownInput.setRangeText(
+        "*" + markdownInput.value.substring(
+          markdownInput.selectionStart,
+          markdownInput.selectionEnd
+        ) + "*",
+        markdownInput.selectionStart,
+        markdownInput.selectionEnd,
+        "select"
+      );
+    }
+  }
+  ```
+</Accordion>
+
+### Links
+
+<Accordion title="Ctrl + L">
+  Wrap selected text in markdown link syntax (`[text](url)`)
+  
+  ```typescript
+  // Implementation: index.ts:862-869
+  if (e.key === "l" && e.ctrlKey) {
+    e.preventDefault();
+    markdownInput.setRangeText(
+      "[" + markdownInput.value.substring(
+        markdownInput.selectionStart,
+        markdownInput.selectionEnd
+      ) + "](url)",
+      markdownInput.selectionStart,
+      markdownInput.selectionEnd,
+      "select"
+    );
+  }
+  ```
+  
+  <Tip>
+  After creating a link, replace "url" with your desired URL. The entire link markup will be selected for easy editing.
+  </Tip>
+</Accordion>
+
+### Strikethrough
+
+<Accordion title="~">
+  Wrap selected text in strikethrough formatting (`~~text~~`)
+  
+  ```typescript
+  // Implementation: index.ts:840-849
+  if (e.key === "~") {
+    if (markdownInput.selectionStart !== markdownInput.selectionEnd) {
+      e.preventDefault();
+      markdownInput.setRangeText(
+        "~~" + markdownInput.value.substring(
+          markdownInput.selectionStart,
+          markdownInput.selectionEnd
+        ) + "~~",
+        markdownInput.selectionStart,
+        markdownInput.selectionEnd,
+        "select"
+      );
+    }
+  }
+  ```
+</Accordion>
+
+### Inline Code
+
+<Accordion title="`">
+  Wrap selected text in inline code formatting (`` `code` ``)
+  
+  ```typescript
+  // Implementation: index.ts:851-860
+  if (e.key === "`") {
+    if (markdownInput.selectionStart !== markdownInput.selectionEnd) {
+      e.preventDefault();
+      markdownInput.setRangeText(
+        "`" + markdownInput.value.substring(
+          markdownInput.selectionStart,
+          markdownInput.selectionEnd
+        ) + "`",
+        markdownInput.selectionStart,
+        markdownInput.selectionEnd,
+        "select"
+      );
+    }
+  }
+  ```
+</Accordion>
+
+## Navigation Shortcuts
+
+### Sidebar Toggle
+
+<Accordion title="Ctrl + H">
+  Toggle the sidebar visibility for a distraction-free editing experience
+  
+  ```typescript
+  // Implementation: index.ts:720-724
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "h" && e.ctrlKey) {
+      e.preventDefault();
+      toggleSidebar();
+    }
+  });
+  ```
+  
+  The sidebar toggle function automatically adapts to screen size:
+  
+  ```typescript
+  const toggleSidebar = () => {
+    const sidebar = document.getElementById("sidebar");
+    if ((!sidebar.style.display && window.innerWidth < 768) || 
+        sidebar.style.display === "none") {
+      openSidebar();
+    } else {
+      closeSidebar();
+    }
+  };
+  ```
+</Accordion>
+
+## Editor Shortcuts
+
+### Tab Indentation
+
+<Accordion title="Tab">
+  Insert a tab character at the cursor position (default tab behavior is overridden)
+  
+  ```typescript
+  // Implementation: index.ts:804-816
+  markdownInput.addEventListener("keydown", (e) => {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      if (markdownInput.selectionStart === markdownInput.selectionEnd) {
+        markdownInput.setRangeText(
+          "\t",
+          markdownInput.selectionStart || 0,
+          markdownInput.selectionEnd || 0,
+          "end"
+        );
+      }
+    }
+  });
+  ```
+  
+  <Info>
+  The default tab behavior (focus switching) is disabled in the editor to allow proper indentation for code blocks and nested lists.
+  </Info>
+</Accordion>
+
+## Shortcut Reference Table
+
+<ResponseField name="shortcuts" type="Reference">
+  <table>
+    <thead>
+      <tr>
+        <th>Shortcut</th>
+        <th>Action</th>
+        <th>Requires Selection</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>Ctrl + B</code></td>
+        <td>Bold text</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>Ctrl + I</code></td>
+        <td>Italic text</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>Ctrl + L</code></td>
+        <td>Create link</td>
+        <td>Optional</td>
+      </tr>
+      <tr>
+        <td><code>~</code></td>
+        <td>Strikethrough</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>`</code></td>
+        <td>Inline code</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>Ctrl + H</code></td>
+        <td>Toggle sidebar</td>
+        <td>No</td>
+      </tr>
+      <tr>
+        <td><code>Tab</code></td>
+        <td>Insert tab/indent</td>
+        <td>No</td>
+      </tr>
+    </tbody>
+  </table>
+</ResponseField>
+
+## Usage Tips
+
+<CardGroup cols={2}>
+  <Card title="Select First" icon="text-select">
+    Most formatting shortcuts require text selection. Highlight the text you want to format before pressing the shortcut.
+  </Card>
+  
+  <Card title="Instant Preview" icon="eye">
+    All shortcuts trigger immediate markdown rendering and autosave, so you can see your formatted text right away.
+  </Card>
+  
+  <Card title="Nested Formatting" icon="layer-group">
+    You can apply multiple formats sequentially. For example, make text bold first, then add a link around it.
+  </Card>
+  
+  <Card title="Works Everywhere" icon="globe">
+    All shortcuts work consistently across different view modes (editor, center, reader).
+  </Card>
+</CardGroup>
+
+## Implementation Details
+
+All keyboard shortcuts are implemented in `index.ts` (lines 720-873) using event listeners on the markdown input element:
+
+```typescript
+// Editor event listeners setup
+const markdownInput = document.getElementById("markdownInput");
+
+markdownInput.addEventListener("keydown", (e) => {
+  // Formatting shortcuts (bold, italic, links, etc.)
+  // ...
+  
+  // Trigger re-render after formatting
+  renderMarkdown();
+  saveActiveNote();
+});
+```
+
+<Note>
+All formatting shortcuts automatically trigger markdown rendering and save operations, ensuring your changes are immediately visible and persisted.
+</Note>
+
+## Auto-Save Integration
+
+Every keyboard shortcut triggers the auto-save mechanism:
+
+```typescript
+// index.ts:871-872
+renderMarkdown();
+saveActiveNote();
+```
+
+This ensures that:
+1. Your formatted text is immediately rendered in the preview
+2. Changes are automatically saved to IndexedDB
+3. The note list is updated with the latest content
+4. The `lastUpdated` timestamp is refreshed
+
+<Warning>
+Keyboard shortcuts only work when the markdown editor has focus. Click inside the editor area before using shortcuts.
+</Warning>

@@ -1,0 +1,135 @@
+---
+title: Installation
+description: Get Docket installed in your Chrome browser
+---
+
+## Install from Chrome Web Store
+
+The easiest way to install Docket is from the Chrome Web Store:
+
+<Steps>
+  <Step title="Visit the Chrome Web Store">
+    Navigate to the [Docket extension page](http://awwscar.ca/docket/)
+  </Step>
+  
+  <Step title="Add to Chrome">
+    Click the "Add to Chrome" button and confirm the installation
+  </Step>
+  
+  <Step title="Open a new tab">
+    Open a new tab to see Docket in action. Your default new tab page is now Docket!
+  </Step>
+</Steps>
+
+<Note>
+  The Chrome Web Store version may be a few versions behind the latest release. For the most up-to-date features, consider installing from source.
+</Note>
+
+## Install from Source (Developer Mode)
+
+For the latest features and updates, you can install Docket manually from the GitHub repository:
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone or download the Docket repository and unzip if needed:
+    
+    ```bash
+    git clone https://github.com/LordExodius/docket.git
+    cd docket
+    ```
+  </Step>
+  
+  <Step title="Build the extension (optional)">
+    If you want to build from source:
+    
+    ```bash
+    npm install
+    npm run build
+    ```
+    
+    The built files will be in the `dist/` folder.
+  </Step>
+  
+  <Step title="Open Chrome extensions page">
+    Navigate to `chrome://extensions/` in your Chrome browser
+  </Step>
+  
+  <Step title="Enable Developer Mode">
+    Toggle "Developer mode" in the top-right corner of the extensions page
+  </Step>
+  
+  <Step title="Load unpacked extension">
+    Click "Load unpacked" and select the root folder of the Docket repository (the folder containing `manifest.json`)
+  </Step>
+  
+  <Step title="Verify installation">
+    Open a new tab to confirm Docket is working. You should see the Docket interface instead of the default new tab page.
+  </Step>
+</Steps>
+
+## Important Warning About Reinstallation
+
+<Warning>
+  Uninstalling and reinstalling the extension will **erase all saved notes**. This happens because Chrome clears the extension's IndexedDB storage when an extension is removed.
+  
+  **Always back up your notes before:**
+  - Switching between the Chrome Web Store version and the developer version
+  - Uninstalling the extension
+  - Clearing browser data
+  
+  You can export notes individually using the download button in the Docket interface.
+</Warning>
+
+## Updating Docket
+
+### Chrome Web Store Version
+
+Extensions from the Chrome Web Store update automatically. You don't need to do anything.
+
+### Developer Mode Version
+
+To update your manual installation:
+
+<Steps>
+  <Step title="Pull latest changes">
+    ```bash
+    git pull origin main
+    ```
+  </Step>
+  
+  <Step title="Rebuild (if needed)">
+    ```bash
+    npm install
+    npm run build
+    ```
+  </Step>
+  
+  <Step title="Reload the extension">
+    Go to `chrome://extensions/` and click the reload icon for Docket
+  </Step>
+</Steps>
+
+<Note>
+  Updating the extension preserves your notes, unlike uninstalling/reinstalling.
+</Note>
+
+## Troubleshooting
+
+### Extension not appearing in new tabs
+
+1. Check that Docket is enabled in `chrome://extensions/`
+2. Try disabling other new tab extensions that might conflict
+3. Reload the extension from the extensions page
+
+### Notes disappeared after update
+
+If you uninstalled the extension before reinstalling, your notes are lost. This is why we recommend:
+- Regularly exporting important notes
+- Updating rather than reinstalling when possible
+- Using the reload button instead of remove/add for developer installations
+
+## Next Steps
+
+<Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+  Learn how to create your first note and master Docket's features
+</Card>

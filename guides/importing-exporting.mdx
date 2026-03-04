@@ -1,0 +1,263 @@
+---
+title: Import and Export
+description: Learn how to download notes as markdown files and import content from external sources
+---
+
+## Downloading Notes as Markdown
+
+Export any note as a standalone markdown file using the `downloadActiveNote` function:
+
+```typescript
+// index.ts:545-560
+const downloadActiveNote = () => {
+  const activeNote = getActiveNote();
+  if (!activeNote) {
+    return;
+  }
+  const blob = new Blob([activeNote.body], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = activeNote.title + ".md";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+```
+
+### How to Export a Note
+
+<Steps>
+  <Step title="Open the note">
+    Navigate to the note you want to export by clicking it in the sidebar.
+  </Step>
+  
+  <Step title="Click download button">
+    Click the download button in the toolbar to trigger the export.
+  </Step>
+  
+  <Step title="Save the file">
+    Your browser will prompt you to save the file with the note's title as the filename.
+  </Step>
+</Steps>
+
+<Info>
+The exported file is pure markdown content (the note body only). The title becomes the filename, and the extension is automatically set to `.md`.
+</Info>
+
+## What Gets Exported
+
+When you download a note, only the **note body** is included:
+
+<CardGroup cols={2}>
+  <Card title="Included" icon="check" color="#10b981">
+    - All markdown content
+    - Code blocks with language tags
+    - Tables and lists
+    - Links and images
+    - Footnotes and alerts
+  </Card>
+  
+  <Card title="Not Included" icon="xmark" color="#ef4444">
+    - Note title (used as filename)
+    - UUID
+    - lastUpdated timestamp
+    - Sidebar position/index
+  </Card>
+</CardGroup>
+
+```typescript
+// The UserNote structure (definitions.ts:10-16)
+interface UserNote {
+  uuid: string;              // Not exported
+  title: string;             // Becomes filename
+  body: string;              // ✓ This is exported
+  lastUpdated: number;       // Not exported
+  lastSynced?: number;       // Not exported
+}
+```
+
+<Tip>
+The `body` field contains your markdown content exactly as written in the editor, preserving all formatting and syntax.
+</Tip>
+
+## Importing Markdown Content
+
+Docket doesn't have a dedicated import button, but you can easily import markdown by pasting:
+
+### Method 1: Paste into Editor
+
+<Steps>
+  <Step title="Create a new note">
+    Click the "New Note" button to create a blank note.
+  </Step>
+  
+  <Step title="Open your markdown file">
+    Open the external markdown file in any text editor and copy all content.
+  </Step>
+  
+  <Step title="Paste into Docket">
+    Click in the Docket editor and paste (Ctrl+V). The content appears immediately with live preview.
+  </Step>
+  
+  <Step title="Set the title">
+    Update the note title field at the top to match your file's name.
+  </Step>
+</Steps>
+
+<Note>
+Docket's autosave automatically saves pasted content to IndexedDB within milliseconds.
+</Note>
+
+### Method 2: Drag and Drop (Browser-Dependent)
+
+Some browsers support dragging text files directly into textarea elements:
+
+1. Open a note in Docket
+2. Drag a `.md` or `.txt` file from your file explorer
+3. Drop it onto the editor textarea
+4. The content should paste automatically (browser-dependent)
+
+<Warning>
+Drag-and-drop file support varies by browser. Chrome and Edge typically support this, while Firefox may not. If it doesn't work, use the paste method instead.
+</Warning>
+
+## Note Format Details
+
+Docket stores notes in a simple structure optimized for markdown:
+
+### Internal Storage Structure
+
+```typescript
+// Example note in IndexedDB
+{
+  uuid: "550e8400-e29b-41d4-a716-446655440000",
+  title: "Project Ideas",
+  body: "# Project Ideas\n\n## Todo App\n- Add authentication\n- Create REST API\n\n## Notes App\n- Use markdown\n- Support export",
+  lastUpdated: 1709567890123
+}
+```
+
+<Accordion title="Why no frontmatter by default?">
+  Docket keeps the note body as pure markdown without YAML frontmatter. Metadata (title, UUID, timestamps) is stored separately in the IndexedDB structure, not in the markdown content itself.
+  
+  **Benefits:**
+  - Cleaner markdown files on export
+  - No parsing complexity
+  - Direct compatibility with any markdown viewer
+  - Smaller file sizes
+  
+  **If you need frontmatter:**
+  You can manually add it to your notes:
+  
+  ```markdown
+  ---
+  title: My Note
+  date: 2026-03-04
+  tags: [work, important]
+  ---
+  
+  # Note content starts here
+  ```
+  
+  Docket will preserve it as part of the body text and render it in the preview.
+</Accordion>
+
+## Backup Recommendations
+
+Before uninstalling Docket or clearing browser data, export all important notes:
+
+<Steps>
+  <Step title="Export each note individually">
+    Open each note and click the download button. This creates `.md` files for each note.
+  </Step>
+  
+  <Step title="Organize exported files">
+    Save all downloaded files to a dedicated folder (e.g., `docket-backup-2026-03-04/`).
+  </Step>
+  
+  <Step title="Optional: Create an index">
+    Consider creating an index file listing all your notes for easy reference:
+    
+    ```markdown
+    # Docket Backup - March 4, 2026
+    
+    - [Project Ideas](Project-Ideas.md)
+    - [Meeting Notes](Meeting-Notes.md)
+    - [Code Snippets](Code-Snippets.md)
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+Clearing browser data or uninstalling Docket **permanently deletes** all notes from IndexedDB. Always backup important notes first!
+</Warning>
+
+## Bulk Export Workaround
+
+Since Docket doesn't have a "Export All" button, you can manually export multiple notes:
+
+```typescript
+// Manual bulk export technique (execute in browser console)
+const exportAllNotes = () => {
+  const notes = docketProps.noteStore.noteMap;
+  notes.forEach((note) => {
+    const blob = new Blob([note.body], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = note.title + ".md";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+};
+
+exportAllNotes();
+```
+
+<Info>
+Run this code in the browser console (F12) while Docket is open to download all notes at once. Your browser may prompt you to allow multiple downloads.
+</Info>
+
+## Import from Other Note Apps
+
+Docket works with markdown from any source:
+
+<CardGroup cols={2}>
+  <Card title="Obsidian" icon="folder">
+    Copy markdown files from your Obsidian vault and paste into Docket. Most syntax works, but Obsidian-specific features (like wiki links `[[page]]`) won't render as links.
+  </Card>
+  
+  <Card title="Notion" icon="file">
+    Export Notion pages as Markdown & CSV. Open the `.md` file and paste content into Docket. Some Notion-specific blocks may need manual adjustment.
+  </Card>
+  
+  <Card title="Bear" icon="note-sticky">
+    Export notes as plain text or markdown from Bear. Paste into Docket. Bear's special tags `#tag#` become regular text.
+  </Card>
+  
+  <Card title="Standard Markdown" icon="markdown">
+    Any `.md` file following CommonMark or GitHub Flavored Markdown works perfectly in Docket.
+  </Card>
+</CardGroup>
+
+<Check>
+Docket uses GitHub Flavored Markdown (GFM), which is widely compatible with most markdown implementations.
+</Check>
+
+## Future Export Features
+
+Potential enhancements to consider:
+
+- Bulk export as ZIP file
+- Export with frontmatter metadata
+- JSON export for backup restoration
+- Sync to cloud storage (Google Drive, Dropbox)
+- Export to PDF with rendered HTML
+
+<Tip>
+Contribute to Docket on GitHub if you'd like to help implement these features!
+</Tip>

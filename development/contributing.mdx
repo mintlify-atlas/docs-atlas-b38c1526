@@ -1,0 +1,182 @@
+---
+title: "Contributing to Docket"
+description: "Learn how to contribute to Docket and help improve the markdown notes extension"
+---
+
+## Welcome Contributors!
+
+Thank you for your interest in contributing to Docket! This guide will help you get started with contributing to the project, whether you're fixing bugs, adding features, or improving documentation.
+
+<Note>
+Docket is an open-source Chrome extension for locally saved markdown notes. We welcome contributions from developers of all skill levels!
+</Note>
+
+## Getting Started
+
+### Setting Up Your Development Environment
+
+<Accordion title="1. Clone the Repository">
+```bash
+git clone https://github.com/lordexodius/docket.git
+cd docket
+```
+</Accordion>
+
+<Accordion title="2. Install Dependencies">
+```bash
+npm install
+```
+
+Docket uses the following key dependencies:
+- **Marked.js** - Markdown parsing
+- **highlight.js** - Code syntax highlighting
+- **DOMPurify** - HTML sanitizing
+</Accordion>
+
+<Accordion title="3. Build the Extension">
+```bash
+npm run build
+```
+
+The build process uses [rspack](https://www.rspack.dev/) to bundle modules and compile TypeScript source code from `src/` into the `dist/` directory.
+</Accordion>
+
+<Accordion title="4. Load the Extension in Chrome">
+1. Navigate to `chrome://extensions/` in your Chrome browser
+2. Enable **Developer mode** (toggle in the top-right corner)
+3. Click **Load unpacked**
+4. Select the root folder of your cloned repository
+5. Done! The extension is now loaded and ready for testing
+</Accordion>
+
+## Project Structure
+
+Understanding the codebase layout will help you navigate and contribute effectively:
+
+<Card title="manifest.json" icon="file-code">
+Contains extension metadata and configuration
+</Card>
+
+<Card title="icons/" icon="image">
+Stores the extension icon assets
+</Card>
+
+<Card title="src/" icon="code">
+TypeScript source code for the extension
+</Card>
+
+<Card title="dist/" icon="folder">
+Compiled output including HTML, CSS, JavaScript, and bundled modules
+</Card>
+
+## Code Style and Conventions
+
+- Write clean, readable TypeScript code
+- Follow existing code patterns and conventions in the codebase
+- Comment complex logic to help other contributors understand your code
+- Ensure your code is properly formatted before submitting
+
+## Making Changes
+
+### Testing Your Changes
+
+<Note type="warning">
+**Important:** Uninstalling and reinstalling the extension will erase all saved notes. Always back up your notes before switching between different versions of the extension!
+</Note>
+
+1. Make your changes to the source code in `src/`
+2. Run `npm run build` to compile your changes
+3. Reload the extension in Chrome:
+   - Go to `chrome://extensions/`
+   - Click the refresh icon on the Docket extension card
+4. Test the functionality thoroughly:
+   - Create and edit notes
+   - Test in both new tab and popup modes
+   - Verify dark mode functionality
+   - Test code block syntax highlighting
+   - Verify autosave and storage behavior
+
+### Pull Request Process
+
+<Accordion title="1. Fork and Branch">
+1. Fork the repository on GitHub
+2. Create a new branch for your feature or fix:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+   or
+   ```bash
+   git checkout -b fix/issue-description
+   ```
+</Accordion>
+
+<Accordion title="2. Commit Your Changes">
+- Write clear, descriptive commit messages
+- Keep commits focused on a single change or feature
+- Reference issue numbers if applicable
+
+Example:
+```bash
+git commit -m "feat: add keyboard shortcut for strikethrough text"
+git commit -m "fix: resolve autosave conflict when multiple instances open"
+```
+</Accordion>
+
+<Accordion title="3. Push and Create PR">
+1. Push your changes to your fork:
+   ```bash
+   git push origin your-branch-name
+   ```
+2. Go to the [Docket repository](https://github.com/lordexodius/docket)
+3. Click **New Pull Request**
+4. Select your branch and provide a clear description of your changes
+5. Explain what problem your PR solves or what feature it adds
+6. Include screenshots or GIFs if your changes affect the UI
+</Accordion>
+
+<Accordion title="4. Review Process">
+- Respond to feedback from maintainers
+- Make requested changes promptly
+- Keep the conversation focused and professional
+- Be patient - maintainers review PRs as their time allows
+</Accordion>
+
+## Reporting Bugs
+
+Found a bug? Help us fix it by providing detailed information:
+
+1. **Check existing issues** - Your bug may already be reported
+2. **Create a new issue** on [GitHub Issues](https://github.com/lordexodius/docket/issues)
+3. **Include in your report:**
+   - Clear description of the bug
+   - Steps to reproduce the issue
+   - Expected behavior vs actual behavior
+   - Chrome version and OS
+   - Screenshots or error messages if applicable
+   - Whether you're using the Chrome Web Store or dev version
+
+## Feature Requests
+
+Have an idea for a new feature? We'd love to hear it!
+
+1. **Check the [roadmap](/development/roadmap)** - Your feature might already be planned
+2. **Open a feature request** on [GitHub Issues](https://github.com/lordexodius/docket/issues)
+3. **Describe your feature:**
+   - What problem does it solve?
+   - How would it work?
+   - Why would it be useful?
+   - Any implementation ideas you have
+
+<Note>
+Feature requests are always welcome! Even if you can't implement it yourself, your ideas help shape the future of Docket.
+</Note>
+
+## Questions or Need Help?
+
+If you have questions about contributing or need help getting started:
+
+- Open a discussion on [GitHub Issues](https://github.com/lordexodius/docket/issues)
+- Review existing issues and pull requests for examples
+- Check the [roadmap](/development/roadmap) for current development priorities
+
+Thank you for contributing to Docket!
