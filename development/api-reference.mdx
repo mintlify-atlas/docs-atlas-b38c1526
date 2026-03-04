@@ -155,6 +155,50 @@ const getNoteByUUID = (uuid: string): UserNote => {
   The UserNote object, or a new note if the UUID doesn't exist
 </ResponseField>
 
+### getNoteByIndex
+
+Retrieves a note by its display index in the sidebar.
+
+```typescript src/index.ts:166-169
+const getNoteByIndex = (index: number): UserNote => {
+  const uuid = docketProps.noteStore.indexToUUID.get(index);
+  return docketProps.noteStore.noteMap.get(uuid!) || createNote();
+};
+```
+
+<ParamField path="index" type="number" required>
+  The display index (0-based) of the note in the sidebar
+</ParamField>
+
+<ResponseField name="return" type="UserNote">
+  The UserNote object at the specified index, or a new note if the index doesn't exist
+</ResponseField>
+
+### setNoteByUUID
+
+Adds or updates a note in the note store by UUID.
+
+```typescript src/index.ts:176-184
+const setNoteByUUID = (uuid: string, note: UserNote) => {
+  if (!docketProps.noteStore.UUIDToIndex.has(uuid)) {
+    const index = docketProps.noteStore.indexToUUID.size;
+    docketProps.noteStore.indexToUUID.set(index, uuid);
+    docketProps.noteStore.UUIDToIndex.set(uuid, index);
+  }
+  docketProps.noteStore.noteMap.set(uuid, note);
+};
+```
+
+<ParamField path="uuid" type="string" required>
+  The UUID of the note to add or update
+</ParamField>
+
+<ParamField path="note" type="UserNote" required>
+  The UserNote object to store
+</ParamField>
+
+This function handles both adding new notes and updating existing ones. If the UUID is new, it assigns it the next available index.
+
 ### deleteNoteByUUID
 
 Deletes a note from the note store and IndexedDB.
