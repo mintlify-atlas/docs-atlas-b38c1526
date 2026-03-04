@@ -1,0 +1,87 @@
+{
+  "projectType": "frontend",
+  "projectName": "Docket",
+  "projectDescription": "A Chrome extension for locally saved markdown notes in new tabs or popups",
+  "theme": "palm",
+  "primaryColor": "#040404",
+  "lightColor": null,
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/markdown-editing",
+              "features/note-management",
+              "features/keyboard-shortcuts",
+              "features/themes-and-styling"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/using-editor",
+              "guides/organizing-notes",
+              "guides/importing-exporting",
+              "guides/customization"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Development",
+        "groups": [
+          {
+            "group": "Developer Guide",
+            "pages": [
+              "development/architecture",
+              "development/building",
+              "development/api-reference"
+            ]
+          },
+          {
+            "group": "Contributing",
+            "pages": [
+              "development/contributing",
+              "development/roadmap"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Markdown editor with live preview",
+    "Syntax highlighting for code blocks",
+    "Local storage with IndexedDB",
+    "Dark mode support",
+    "Drag-and-drop note organization",
+    "Import/export markdown files",
+    "Keyboard shortcuts",
+    "Multiple view modes (editor, split, reader)"
+  ],
+  "publicApiSurface": [
+    "UserNote interface",
+    "NoteStore interface",
+    "createNote()",
+    "setActiveNote()",
+    "deleteNoteByUUID()",
+    "moveNoteToIndex()",
+    "renderMarkdown()",
+    "saveActiveNote()",
+    "downloadActiveNote()",
+    "toggleDarkMode()",
+    "updateCodeStyle()"
+  ]
+}
